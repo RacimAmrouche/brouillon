@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
+import car from "../assets/car.png"
 
 const ProS = () => {
   const navigate = useNavigate()
@@ -10,9 +11,24 @@ const ProS = () => {
   const [isDark, setIsDark] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [notifications, setNotifications] = useState(3)
-  const [isAvailable, setIsAvailable] = useState(true)
+
+  // Modified availability state to cycle through three states
+  const [availabilityState, setAvailabilityState] = useState(0) // 0: disponible, 1: disponible pour appel, 2: indisponible
+  const availabilityStates = ["disponible", "disponible pour appel", "indisponible"]
+  const availabilityColors = [
+    "bg-green-500 hover:bg-green-600",
+    "bg-yellow-500 hover:bg-yellow-600",
+    "bg-red-500 hover:bg-red-600",
+  ]
+
   const [selectedPatient, setSelectedPatient] = useState(null)
-   const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null)
+
+  // Vehicle connection state
+  const [showVehiclePopup, setShowVehiclePopup] = useState(false)
+  const [vehicleConnected, setVehicleConnected] = useState(true)
+  const [macAddress] = useState("00:1A:2B:3C:4D:5E") 
+  const [ipAddress] = useState("192.168.255.1")
 
   // État pour les demandes de prise en charge - Filtré pour n'inclure que les alertes Haute et Moyenne
   const [patientRequests, setPatientRequests] = useState([
@@ -85,19 +101,18 @@ const ProS = () => {
   // Vérifier si le professionnel a déjà une intervention en cours
   const hasActiveIntervention = acceptedPatients.length > 0
 
-//recup les info du proS
-    useEffect(() => {
-         
-         const storedUser = localStorage.getItem("user");
-         console.log("Données dans localStorage :", storedUser);
-         if (storedUser) {
-           const userData = JSON.parse(storedUser);
-           console.log("User récupéré :", userData); // 👈 ajoute ça pour vérifier
-           setUser(userData);
-         } else {
-           window.location.href = "/ProSignin";
-         }
-       }, []);
+  //recup les info du proS
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user")
+    console.log("Données dans localStorage :", storedUser)
+    if (storedUser) {
+      const userData = JSON.parse(storedUser)
+      console.log("User récupéré :", userData) // 👈 ajoute ça pour vérifier
+      setUser(userData)
+    } else {
+      window.location.href = "/ProSignin"
+    }
+  }, [])
 
   // Navigation item click handler
   const handleNavClick = (item) => {
@@ -125,9 +140,23 @@ const ProS = () => {
     }
   }
 
-  // Fonction pour changer le statut de disponibilité
-  const toggleAvailability = () => {
-    setIsAvailable(!isAvailable)
+  // Modified function to cycle through availability states
+  const cycleAvailability = () => {
+    setAvailabilityState((prev) => (prev + 1) % 3)
+  }
+
+  // Vehicle connection functions
+  const openVehiclePopup = () => {
+    setShowVehiclePopup(true)
+  }
+
+  const closeVehiclePopup = () => {
+    setShowVehiclePopup(false)
+  }
+
+  const disconnectVehicle = () => {
+    setVehicleConnected(false)
+    setShowVehiclePopup(false)
   }
 
   // Fonction pour afficher les détails du patient
@@ -197,9 +226,14 @@ const ProS = () => {
   const stats = [
     {
       label: "Statut",
-      value: isAvailable ? "Disponible" : "Non disponible",//dispo appel
+      value: availabilityStates[availabilityState],
       icon: "activity",
-      color: isAvailable ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600",
+      color:
+        availabilityState === 0
+          ? "bg-green-100 text-green-600"
+          : availabilityState === 1
+            ? "bg-yellow-100 text-yellow-600"
+            : "bg-red-100 text-red-600",
     },
     {
       label: "Demandes en attente",
@@ -636,6 +670,25 @@ const ProS = () => {
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
         )
+      case "car":
+        return (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18.4 9.6a2 2 0 0 0-1.6-1.4C16.6 8.2 16.3 8 16 8H8c-.3 0-.6.2-.8.2a2 2 0 0 0-1.6 1.4L3.5 11.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2"></path>
+            <circle cx="7" cy="17" r="2"></circle>
+            <path d="M9 17h6"></path>
+            <circle cx="17" cy="17" r="2"></circle>
+          </svg>
+        )
       default:
         return null
     }
@@ -644,7 +697,7 @@ const ProS = () => {
   // Couleur du texte en mode sombre qui correspond au bg-gray-800
   const darkModeTextColor = "#1f2937" // Équivalent à bg-gray-800
   if (!user) {
-    return <p>Chargement...</p>;
+    return <p>Chargement...</p>
   }
   return (
     <div
@@ -658,7 +711,6 @@ const ProS = () => {
           <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="mr-3">
             {isMobileMenuOpen ? renderIcon("x") : renderIcon("menu")}
           </button>
-          
         </div>
         <div className="flex items-center">
           <button className="relative p-2">
@@ -669,21 +721,21 @@ const ProS = () => {
               </span>
             )}
           </button>
-      
         </div>
       </div>
 
       {/* Vertical Menu - Desktop */}
       <div className={`hidden md:flex flex-col w-64 ${isDark ? "bg-gray-800" : "bg-white"} shadow-lg h-full`}>
-
-
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3">
             <div className="h-12 w-12 rounded-full bg-[#f05050] flex items-center justify-center text-white font-medium text-lg">
-            {user.result.name.charAt(0)}{user.result.lastName.charAt(0)}
+              {user.result.name.charAt(0)}
+              {user.result.lastName.charAt(0)}
             </div>
             <div>
-              <h3 className="font-medium">{user.result.name} {user.result.lastName}</h3>
+              <h3 className="font-medium">
+                {user.result.name} {user.result.lastName}
+              </h3>
               <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>Professionnel de santé</p>
             </div>
           </div>
@@ -704,19 +756,7 @@ const ProS = () => {
                 <span className="font-medium">Tableau de bord</span>
               </button>
             </li>
-            <li>
-              <button
-                onClick={() => handleNavClick("patients")}
-                className={`w-full flex items-center px-4 py-3 rounded-lg transition-all duration-200 ${
-                  activeItem === "patients"
-                    ? "bg-[#f05050] text-white shadow-md"
-                    : `${isDark ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-100"}`
-                }`}
-              >
-                <span className="mr-3 h-5 w-5">{renderIcon("users")}</span>
-                <span className="font-medium">Mes patients</span>
-              </button>
-            </li>
+
             <li>
               <button
                 onClick={() => handleNavClick("account")}
@@ -793,8 +833,6 @@ const ProS = () => {
                 <button onClick={() => setIsMobileMenuOpen(false)}>{renderIcon("x")}</button>
               </div>
             </div>
-
-           
 
             <nav className="mt-4 px-3">
               <ul className="space-y-2">
@@ -883,7 +921,7 @@ const ProS = () => {
       )}
 
       {/* Main Content */}
-      <div className={`flex-1 overflow-auto ${selectedPatient ? "filter blur-sm" : ""}`}>
+      <div className={`flex-1 overflow-auto ${selectedPatient || showVehiclePopup ? "filter blur-sm" : ""}`}>
         {/* Desktop Header */}
         <div
           className={`hidden md:flex items-center justify-between p-6 ${isDark ? "bg-gray-800" : "bg-white"} shadow-sm`}
@@ -891,23 +929,37 @@ const ProS = () => {
           <div className="flex items-center">
             <h1 className="text-2xl font-bold">Tableau de bord</h1>
           </div>
-          
         </div>
 
         <div className="p-6">
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-6">Bienvenue, {user.result.name}{user.result.lastName}</h2>
+            <h2 className="text-xl font-semibold mb-6">
+              Bienvenue, {user.result.name} {user.result.lastName}
+            </h2>
 
-            {/* Bouton de disponibilité */}
-            <div className="mb-8 flex justify-center">
+            {/* Modified availability button with cycling states */}
+            <div className="mb-8 flex justify-center space-x-4">
               <button
-                onClick={toggleAvailability}
-                className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center ${
-                  isAvailable ? "bg-green-500 hover:bg-green-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
-                }`}
+                onClick={cycleAvailability}
+                className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center text-white ${availabilityColors[availabilityState]}`}
               >
-                <span className="mr-2">{isAvailable ? "Disponible" : "Non disponible"}</span>
-                <span className="h-5 w-5">{isAvailable ? renderIcon("check") : renderIcon("x-circle")}</span>
+                <span className="mr-2">{availabilityStates[availabilityState]}</span>
+                <span className="h-5 w-5">
+                  {availabilityState === 0
+                    ? renderIcon("check")
+                    : availabilityState === 1
+                      ? renderIcon("phone")
+                      : renderIcon("x-circle")}
+                </span>
+              </button>
+
+              {/* Vehicle connection button */}
+              <button
+                onClick={openVehiclePopup}
+                className="px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center bg-[#f05050] hover:bg-[#f05060] text-white"
+              >
+                <span className="mr-2 h-5 w-5">{renderIcon("car")}</span>
+                <span>Connecter véhicule</span>
               </button>
             </div>
 
@@ -990,7 +1042,7 @@ const ProS = () => {
                                   className={`text-green-600 hover:text-green-900 dark:hover:text-green-400 ${
                                     hasActiveIntervention ? "opacity-50 cursor-not-allowed" : ""
                                   }`}
-                                  disabled={!isAvailable || hasActiveIntervention}
+                                  disabled={availabilityState === 2 || hasActiveIntervention}
                                 >
                                   Accepter
                                 </button>
@@ -1099,6 +1151,74 @@ const ProS = () => {
           </div>
         </div>
       </div>
+
+      {/* Vehicle Connection Popup */}
+      {showVehiclePopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={closeVehiclePopup}>
+          <div
+            className={`relative w-full max-w-md rounded-lg shadow-xl ${isDark ? "bg-gray-800" : "bg-white"} p-6`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              onClick={closeVehiclePopup}
+            >
+              {renderIcon("x")}
+            </button>
+
+            <div className="mb-6">
+              <h2 className="text-xl font-bold mb-4 flex items-center">
+                <span className="mr-2 h-6 w-6">{renderIcon("car")}</span>
+                Connexion véhicule
+              </h2>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+                  <span className="font-medium">Link status:</span>
+                  <span
+                    className={`px-2 py-1 rounded text-sm font-medium ${
+                      vehicleConnected
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                    }`}
+                  >
+                    {vehicleConnected ? "connected" : "disconnected"}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+                  <span className="font-medium">Mac address:</span>
+                  <span className="font-mono text-sm">{macAddress}</span>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+                  <span className="font-medium">IP address:</span>
+                  <span className="font-mono text-sm">{ipAddress}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              {vehicleConnected && (
+                <button
+                  onClick={disconnectVehicle}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Disconnect
+                </button>
+              )}
+              <button
+                onClick={closeVehiclePopup}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  isDark ? "bg-gray-700 text-gray-300 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal pour les détails du patient */}
       {selectedPatient && (
@@ -1238,7 +1358,7 @@ const ProS = () => {
                     className={`px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors ${
                       hasActiveIntervention ? "opacity-50 cursor-not-allowed" : ""
                     }`}
-                    disabled={!isAvailable || hasActiveIntervention}
+                    disabled={availabilityState === 2 || hasActiveIntervention}
                   >
                     Accepter la prise en charge
                   </button>

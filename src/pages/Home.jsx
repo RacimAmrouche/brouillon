@@ -50,7 +50,7 @@ const Home = ({ isDarkMode }) => {
             onClick={openLoginPopup}
             className={`bg-white ${isDarkMode ? "text-black" : "text-[#f05050]"} px-8 py-3 rounded-full text-xl font-semibold shadow-md hover:bg-gray-100 transition duration-300 mb-16`}
           >
-            Sign Up
+            Sign Up / Sign In
           </button>
 
           {/* Section "Who are we?" */}

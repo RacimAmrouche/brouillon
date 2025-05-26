@@ -28,6 +28,7 @@ import HistPat from "./pages/HistPat";
 import AccountSettings from "./pages/AccountSettings";
 import Moderation from "./pages/Moderation";
 import MedRec from "./pages/MedRec";
+import Features from "./pages/Features";
 import { DarkModeProvider } from "./components/layouts/DarkModeContext";
 
 function App() {
@@ -54,6 +55,7 @@ function App() {
         <Route path="Listproches" element={<Listproches />} />
         <Route path="Moderation" element={<Moderation/>} />
         <Route path="MedRec" element={<MedRec/>} />
+        <Route path="Features" element={<Features/>} />
       </Route>
     )
   );
