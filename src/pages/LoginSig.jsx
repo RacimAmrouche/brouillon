@@ -151,7 +151,7 @@ const Form = ({ type, isDark }) => {
               onClick={() => handleSignUpNavigation("pros")}
               className="bg-[#E04141] text-white py-3 px-4 uppercase text-xs hover:bg-[#D32F2F] transition w-full rounded-lg"
             >
-              Sign Up as Professional
+              Sign Up as Healthcare Pro
             </button>
       
           </>
@@ -170,7 +170,7 @@ const Form = ({ type, isDark }) => {
               className="bg-[#E04141] text-white py-3 px-4 uppercase text-xs hover:bg-[#D32F2F] transition w-full mb-4 rounded-lg"
               disabled={loading}
             >
-              {loading ? "Loading..." : "Sign In as Professional"}
+              {loading ? "Loading..." : "Sign In as Healthcare Pro"}
             </button>
    
           </form>

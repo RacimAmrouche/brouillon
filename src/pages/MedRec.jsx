@@ -1,11 +1,27 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Plus, File, Trash2, Mail, Calendar, Upload, X, Eye, Loader2 } from "lucide-react"
+import axios from "axios"
+import { Button } from "@/components/layouts/ui/button"
+import { Input } from "@/components/layouts/ui/input"
+import { Label } from "@/components/layouts/ui/label"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/layouts/ui/card"
+import { Badge } from "@/components/layouts/ui/badge"
 
 const MedRec = () => {
-  const [isDark, setIsDark] = useState(false)
   const [medicalRecords, setMedicalRecords] = useState([])
   const [showAddForm, setShowAddForm] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [recordToDelete, setRecordToDelete] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [showImageModal, setShowImageModal] = useState(false)
+
+  // You'll need to get this from your authentication system
+  const [patientId] = useState("123e4567-e89b-12d3-a456-426614174000") // Replace with actual patient ID
 
   // Form state
   const [newRecord, setNewRecord] = useState({
@@ -16,10 +32,11 @@ const MedRec = () => {
 
   // Error state
   const [errors, setErrors] = useState({})
+  const [apiError, setApiError] = useState("")
 
-  // Load medical records
+  // Load medical records from API
   useEffect(() => {
-    // Données d'exemple pour démonstration - pas de dépendance au back-end
+    // Sample data for demonstration
     const sampleRecords = [
       {
         id: 1,
@@ -44,10 +61,9 @@ const MedRec = () => {
       },
     ]
 
-    // Utiliser les données d'exemple directement
-    setMedicalRecords(sampleRecords)
+    
 
-    // Optionnel: sauvegarder dans localStorage
+    // Save to localStorage
     try {
       localStorage.setItem("medicalRecords", JSON.stringify(sampleRecords))
     } catch (error) {
@@ -67,7 +83,7 @@ const MedRec = () => {
     if (errors[name]) {
       setErrors({
         ...errors,
-        [name]: null,
+        [name]: "",
       })
     }
   }
@@ -75,16 +91,28 @@ const MedRec = () => {
   // Handle file input changes
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
       setNewRecord({
         ...newRecord,
-        file: e.target.files[0],
+        file: file,
       })
+
+      // Create image preview if it's an image
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          setImagePreview(e.target.result)
+        }
+        reader.readAsDataURL(file)
+      } else {
+        setImagePreview(null)
+      }
 
       // Clear error for this field
       if (errors.file) {
         setErrors({
           ...errors,
-          file: null,
+          file: "",
         })
       }
     }
@@ -112,64 +140,158 @@ const MedRec = () => {
     return Object.keys(newErrors).length === 0
   }
 
+  // Upload medical record function
+  const uploadMedicalRecord = async (formData) => {
+    try {
+      // Simulate API call - replace with actual endpoint
+      console.log("Uploading medical record:", formData)
+
+      // For demo purposes, we'll just return success
+      return { success: true, message: "Record uploaded successfully" }
+    } catch (error) {
+      console.error("Erreur upload:", error)
+      throw error
+    }
+  }
+
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     if (validateForm()) {
-      // Create a new record
-      const newRecordData = {
-        id: Date.now(),
-        title: newRecord.title,
-        doctorEmail: newRecord.doctorEmail,
-        date: new Date().toISOString().split("T")[0],
-        status: "pending",
-      }
-
-      // Pour exécution sans back-end, on met à jour directement
-      // Add to state
-      const updatedRecords = [...medicalRecords, newRecordData]
-      setMedicalRecords(updatedRecords)
-
-      // Optionnel: sauvegarder dans localStorage
       try {
-        localStorage.setItem("medicalRecords", JSON.stringify(updatedRecords))
+        // Call your backend handler
+        await handleUploadMedRec()
+
+        // Create a new record for local display
+        const newRecordData = {
+          id: Date.now(),
+          title: newRecord.title,
+          doctorEmail: newRecord.doctorEmail,
+          date: new Date().toISOString().split("T")[0],
+          status: "pending",
+          fileName: newRecord.file?.name,
+        }
+
+        // Add to state
+        const updatedRecords = [...medicalRecords, newRecordData]
+        setMedicalRecords(updatedRecords)
+
+        // Save to localStorage
+        try {
+          localStorage.setItem("medicalRecords", JSON.stringify(updatedRecords))
+        } catch (error) {
+          console.log("Erreur localStorage:", error)
+        }
+
+        // Reset form
+        setNewRecord({
+          title: "",
+          doctorEmail: "",
+          file: null,
+        })
+        setImagePreview(null)
+
+        // Hide form
+        setShowAddForm(false)
       } catch (error) {
-        console.log("Erreur localStorage:", error)
+        console.error("Error submitting form:", error)
       }
-
-      // Reset form
-      setNewRecord({
-        title: "",
-        doctorEmail: "",
-        file: null,
-      })
-
-      // Hide form
-      setShowAddForm(false)
     }
   }
 
   // Handle record deletion
   const handleDeleteRecord = (id) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce dossier médical ?")) {
-      // Pour exécution sans back-end, on met à jour directement
-      const updatedRecords = medicalRecords.filter((record) => record.id !== id)
+    setRecordToDelete(id)
+    setIsDeleteModalOpen(true)
+  }
+
+  // Confirm deletion
+ /* const confirmDelete = async () => {
+    if (recordToDelete === null) return
+
+    try {
+      // Simulate API call for deletion
+      console.log("Deleting record:", recordToDelete)
+
+      // Update local state
+      const updatedRecords = medicalRecords.filter((record) => record.id !== recordToDelete)
       setMedicalRecords(updatedRecords)
 
-      // Optionnel: sauvegarder dans localStorage
+      // Save to localStorage
       try {
         localStorage.setItem("medicalRecords", JSON.stringify(updatedRecords))
       } catch (error) {
         console.log("Erreur localStorage:", error)
       }
+
+      // Close modal
+      setIsDeleteModalOpen(false)
+      setRecordToDelete(null)
+    } catch (error) {
+      console.error("Erreur suppression:", error)
     }
+  }*/
+
+
+
+
+
+
+
+  // Remplace ta fonction confirmDelete par celle-ci :
+const confirmDelete = async () => {
+  if (recordToDelete === null) return;
+
+  try {
+    setDeleting(true);
+    
+    // Appelle la nouvelle fonction avec l'ID spécifique
+    await deleteSpecificRecord(recordToDelete);
+    
+  } catch (error) {
+    console.error("Erreur suppression:", error);
+  } finally {
+    setDeleting(false);
   }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // Format date
   const formatDate = (dateString) => {
     try {
-      const options = { year: "numeric", month: "long", day: "numeric" }
+      const options = {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }
       return new Date(dateString).toLocaleDateString("fr-FR", options)
     } catch (error) {
       return dateString
@@ -180,335 +302,594 @@ const MedRec = () => {
   const renderStatusBadge = (status) => {
     if (status === "validated") {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+        <Badge variant="secondary" className="bg-green-100 text-green-800">
           Validé
-        </span>
+        </Badge>
+      )
+    } else if (status === "rejected") {
+      return (
+        <Badge variant="secondary" className="bg-red-100 text-red-800">
+          Refusé
+        </Badge>
       )
     } else {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100">
+        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
           En attente
-        </span>
+        </Badge>
       )
     }
   }
 
-  // Render icons
-  const renderIcon = (name) => {
-    switch (name) {
-      case "plus":
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-        )
-      case "file":
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-          </svg>
-        )
-      case "trash":
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          </svg>
-        )
-      case "mail":
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-            <polyline points="22,6 12,13 2,6"></polyline>
-          </svg>
-        )
-      case "calendar":
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-        )
-      case "upload":
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline>
-            <line x1="12" y1="3" x2="12" y2="15"></line>
-          </svg>
-        )
-      case "x":
-        return (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        )
-      default:
-        return null
+  //FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:
+  //FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:
+
+  const handleUploadMedRec = async () => {
+    const storedUser = localStorage.getItem("user")
+    if (!storedUser) return alert("Utilisateur non connecté")
+
+    const user = JSON.parse(storedUser)
+    const formData = new FormData()
+
+    formData.append("ID", user.result.uid) // ID patient
+    formData.append("MailMedecin", newRecord.doctorEmail) // Email du médecin
+    formData.append("Title", newRecord.title) // Titre du dossier
+    formData.append("file", newRecord.file) // Fichier sélectionné
+
+    try {
+      const response = await axios.post("http://192.168.1.4:5001/api/validationmail/PatientUploder", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      console.log("Succès :", response.data)
+      alert("Dossier envoyé avec succès !")
+      
+       const idfDossier = response.data.idfdossier;
+       if (idfDossier) {
+       localStorage.setItem("idDossier", idfDossier);
+       console.log("✅ idDossier enregistré :", idfDossier);
+
+       }
+
+
+
+      const newRecordData = {
+      id: response.data, // ✅ ID du serveur, pas Date.now() !
+      title: newRecord.title,
+      doctorEmail: newRecord.doctorEmail,
+      date: new Date().toISOString().split("T")[0],
+      status: "pending",
+      fileName: newRecord.file?.name,
+    }
+    const updatedRecords = [...medicalRecords, newRecordData]
+    setMedicalRecords(updatedRecords)
+    localStorage.setItem("medicalRecords", JSON.stringify(updatedRecords))
+    } catch (error) {
+      console.error("Erreur upload :", error.response?.data || error.message)
+      alert("Échec de l'envoi du dossier.")
     }
   }
+   
+
+  
+   
+ 
+const handleDeleteMedRec = async () => {
+  try {
+    const storedUser = localStorage.getItem("user")
+    const idDossier = localStorage.getItem("idDossier") // <-- Récupère l'id du dossier à supprimer
+
+    if (!storedUser || !idDossier) {
+      console.error("Identifiants manquants (patient ou dossier).")
+      alert("Suppression impossible : identifiants manquants.")
+      return
+    }
+
+    const userData = JSON.parse(storedUser)
+
+    const formData = new FormData()
+    formData.append("patient", userData.result.uid)
+    formData.append("idDossier", )
+
+    const response = await axios.post("http://192.168.1.4:5001/api/validationmail/deleteListMedRec", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    })
+
+    console.log("✅ Dossier supprimé avec succès :", response.data)
+    alert("Le dossier a été supprimé avec succès.")
+    
+    // Supprimer l'ID du localStorage (si utile)
+    localStorage.removeItem("idDossier")
+     
+    // (Optionnel) recharger la liste
+     setmedicalRecords(prev => prev.filter(p => p.id !== current.id));
+
+  } catch (error) {
+    if (error.response) {
+      console.error("❌ Erreur serveur :", error.response.data)
+      alert(`Erreur serveur : ${error.response.data.message || "inconnue"}`)
+    } else {
+      console.error("❌ Erreur réseau :", error.message)
+      alert("Erreur de connexion au serveur.")
+    }
+  }
+}
+
+ 
+
+
+  
+
+/*
+  const ALLsuppr = async () =>{
+   // localStorage.removeItem("medicalRecords");
+   // localStorage.removeItem("idDossier");
+   // setMedicalRecords([]);
+   
+   try {
+    const storedUser = localStorage.getItem("user");
+    const recordId= localStorage.getItem("idDossier")
+    if (!storedUser || !recordId) {
+      console.error("Identifiants manquants (utilisateur ou dossier).");
+      alert("Suppression impossible : identifiants manquants.");
+      return;
+    }
+
+    const userData = JSON.parse(storedUser);
+
+    const formData = new FormData();
+    formData.append("patient", userData.result.uid);
+    formData.append("idDossier", recordId); // Utilise recordId passé en paramètre
+
+    const response = await axios.post("http://192.168.1.4:5001/api/validationmail/deleteListMedRec", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    console.log("✅ Dossier supprimé avec succès :", response.data);
+   // alert("Le dossier a été supprimé avec succès.");
+
+    // Supprimer l'élément du localStorage "medicalRecords"
+   // const storedRecords = JSON.parse(localStorage.getItem("medicalRecords")) || [];
+  //  const updatedRecords = storedRecords.filter((rec) => rec.id !== recordId);
+   // localStorage.setItem("medicalRecords", JSON.stringify(updatedRecords));
+
+    // Supprimer dans l'état React
+     setMedicalRecords((prev) => prev.filter((rec) => rec.id.toString() !== recordId));
+
+    // Nettoyage localStorage
+    localStorage.removeItem("idDossier");
+
+    // Supprimer l’ID temporaire si stocké
+    //localStorage.removeItem("idDossier");
+  } 
+
+
+  
+ catch (error) {
+    if (error.response) {
+      console.error("❌ Erreur serveur :", error.response.data);
+      alert(`Erreur serveur : ${error.response.data.message || "inconnue"}`);
+    } else {
+      console.error("❌ Erreur réseau :", error.message);
+      alert("Erreur de connexion au serveur.");
+    }
+  }
+ 
+
+
+};
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ const handleDeleteRecordBB = async () => {
+  // Confirmation avant suppression
+  if (!confirm("Êtes-vous sûr de vouloir supprimer ce dossier médical ? Cette action est irréversible.")) {
+    return;
+  }
+
+  try {
+    setDeleting(true);
+    
+    const storedUser = localStorage.getItem("user");
+    const storeIDdoc = localStorage.getItem("idDossier");
+    if (!storedUser || !storeIDdoc) {
+      console.error("Identifiants manquants (utilisateur ou dossier).");
+      alert("Suppression impossible : identifiants manquants.");
+      return;
+    }
+
+    console.log("Type de recordId:", typeof storeIDdoc);
+    console.log("Valeur de recordId:", storeIDdoc);
+    
+    const userData = JSON.parse(storedUser);
+    
+    const formData = new FormData();
+    formData.append("Patient", userData.result.uid);
+    formData.append("IdDossier",storeIDdoc);
+
+    const response = await axios.post("http://192.168.1.4:5001/api/validationmail/deleteListMedRec", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    console.log("✅ Dossier supprimé avec succès :", response.data);
+
+    // Supprimer dans l'état React
+    setMedicalRecords((prev) => prev.filter((rec) => rec.id !== recordId));
+
+    // Mettre à jour le localStorage
+    const storedRecords = JSON.parse(localStorage.getItem("medicalRecords") || "[]");
+    const updatedRecords = storedRecords.filter((rec) => rec.id !== recordId);
+    localStorage.setItem("medicalRecords", JSON.stringify(updatedRecords));
+
+    alert("Le dossier a été supprimé avec succès.");
+
+  } catch (error) {
+    if (error.response) {
+      console.error("❌ Erreur serveur :", error.response.data);
+      alert(`Erreur serveur : ${error.response.data.message || "inconnue"}`);
+    } else {
+      console.error("❌ Erreur réseau :", error.message);
+      alert("Erreur de connexion au serveur.");
+    }
+  } finally {
+    setDeleting(false);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   
+
+
+
+
+ 
+
+  
+
+  //FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:
+  //FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:FIXME:
 
   return (
-    <div className={`min-h-screen ${isDark ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-800"}`}>
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className={`${isDark ? "bg-gray-800" : "bg-white"} shadow-md p-4`}>
-        <div className="container mx-auto">
-          <h1 className="text-2xl font-bold">Mes Dossiers Médicaux</h1>
-          <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-            Gérez vos dossiers médicaux et ordonnances
-          </p>
+      <div className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold text-gray-900">Mes Dossiers Médicaux</h1>
+          <p className="text-gray-600 mt-2">Gérez vos dossiers médicaux et ordonnances</p>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto p-4">
+      <div className="container mx-auto px-4 py-8">
+        {/* API Error Display */}
+        {apiError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800 text-sm">{apiError}</p>
+          </div>
+        )}
+
         {/* Add Record Button */}
         <div className="mb-6">
-          <button
+          <Button
             onClick={() => setShowAddForm(!showAddForm)}
-            className={`flex items-center px-4 py-2 rounded-lg ${
-              showAddForm ? "bg-gray-500 hover:bg-gray-600" : "bg-[#f05050] hover:bg-[#e04040]"
-            } text-white transition-colors`}
+            disabled={uploading}
+            className={`${showAddForm ? "bg-gray-500 hover:bg-gray-600" : "bg-red-500 hover:bg-red-600"}`}
           >
-            <span className="mr-2">{showAddForm ? renderIcon("x") : renderIcon("plus")}</span>
-            <span>{showAddForm ? "Annuler" : "Ajouter un dossier médical"}</span>
-          </button>
+            {showAddForm ? (
+              <>
+                <X className="w-4 h-4 mr-2" />
+                Annuler
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter un dossier médical
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Add Record Form */}
         {showAddForm && (
-          <div className={`${isDark ? "bg-gray-800" : "bg-white"} rounded-lg shadow-md p-6 mb-6`}>
-            <h2 className="text-xl font-semibold mb-4">Ajouter un nouveau dossier médical</h2>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1" htmlFor="title">
-                  Titre du dossier
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={newRecord.title}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 rounded-lg border ${
-                    isDark ? "bg-gray-700 text-white border-gray-600" : "bg-white text-gray-900 border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-[#f05050]`}
-                  placeholder="Ex: Radiographie du genou"
-                />
-                {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1" htmlFor="doctorEmail">
-                  Email du médecin
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    {renderIcon("mail")}
-                  </div>
-                  <input
-                    type="email"
-                    id="doctorEmail"
-                    name="doctorEmail"
-                    value={newRecord.doctorEmail}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Ajouter un nouveau dossier médical</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Titre du dossier</Label>
+                  <Input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value={newRecord.title}
                     onChange={handleInputChange}
-                    className={`pl-10 w-full px-3 py-2 rounded-lg border ${
-                      isDark ? "bg-gray-700 text-white border-gray-600" : "bg-white text-gray-900 border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-[#f05050]`}
-                    placeholder="docteur@example.com"
+                    placeholder="Ex: Radiographie du genou"
+                    className="mt-1"
+                    disabled={uploading}
                   />
+                  {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
                 </div>
-                {errors.doctorEmail && <p className="mt-1 text-sm text-red-500">{errors.doctorEmail}</p>}
-              </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1" htmlFor="file">
-                  Image du dossier médical
-                </label>
-                <div
-                  className={`border-2 border-dashed rounded-lg p-4 text-center ${
-                    isDark ? "border-gray-600 bg-gray-700" : "border-gray-300 bg-gray-50"
-                  }`}
-                >
-                  <input
-                    type="file"
-                    id="file"
-                    name="file"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    accept="image/*"
-                  />
-                  <label htmlFor="file" className="cursor-pointer">
-                    <div className="flex flex-col items-center justify-center py-3">
-                      <span className="mb-2 text-[#f05050]">{renderIcon("upload")}</span>
-                      <span className="text-sm font-medium">
-                        {newRecord.file ? newRecord.file.name : "Cliquez pour sélectionner une image"}
-                      </span>
-                      <span className={`text-xs mt-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                        PNG, JPG ou PDF jusqu'à 10MB
-                      </span>
-                    </div>
-                  </label>
+                <div>
+                  <Label htmlFor="doctorEmail">Email du médecin</Label>
+                  <div className="relative mt-1">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      type="email"
+                      id="doctorEmail"
+                      name="doctorEmail"
+                      value={newRecord.doctorEmail}
+                      onChange={handleInputChange}
+                      placeholder="docteur@example.com"
+                      className="pl-10"
+                      disabled={uploading}
+                    />
+                  </div>
+                  {errors.doctorEmail && <p className="mt-1 text-sm text-red-500">{errors.doctorEmail}</p>}
                 </div>
-                {errors.file && <p className="mt-1 text-sm text-red-500">{errors.file}</p>}
-              </div>
 
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="bg-[#f05050] text-white px-4 py-2 rounded-lg hover:bg-[#e04040] transition-colors"
-                >
-                  Ajouter le dossier
-                </button>
-              </div>
-            </form>
-          </div>
+                <div>
+                  <Label htmlFor="file">Image du dossier médical</Label>
+                  <div className="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-6">
+                    <input
+                      type="file"
+                      id="file"
+                      name="file"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      accept="image/*,.pdf"
+                      disabled={uploading}
+                    />
+
+                    {/* Upload area or preview */}
+                    {!imagePreview ? (
+                      <label
+                        htmlFor="file"
+                        className={`cursor-pointer block text-center ${uploading ? "opacity-50" : ""}`}
+                      >
+                        <div className="flex flex-col items-center">
+                          <Upload className="w-8 h-8 text-red-500 mb-2" />
+                          <span className="text-sm font-medium">
+                            {newRecord.file ? newRecord.file.name : "Cliquez pour sélectionner une image"}
+                          </span>
+                          <span className="text-xs text-gray-500 mt-1">PNG, JPG ou PDF jusqu'à 10MB</span>
+                        </div>
+                      </label>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* File info */}
+                        <div className="text-center">
+                          <span className="text-sm font-medium text-gray-700">{newRecord.file.name}</span>
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG ou PDF jusqu'à 10MB</p>
+                        </div>
+
+                        {/* Image preview */}
+                        <div className="relative">
+                          <img
+                            src={imagePreview || "/placeholder.svg"}
+                            alt="Aperçu du fichier"
+                            className="w-full max-h-48 object-contain rounded-lg bg-gray-50 border"
+                          />
+                          <div className="absolute top-2 right-2 flex space-x-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="bg-white/90 hover:bg-white text-xs"
+                              onClick={() => setShowImageModal(true)}
+                            >
+                              <Eye className="w-3 h-3 mr-1" />
+                              Voir en grand
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="bg-white/90 hover:bg-white text-xs"
+                              onClick={() => {
+                                setNewRecord({ ...newRecord, file: null })
+                                setImagePreview(null)
+                              }}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Change file button */}
+                        <div className="text-center">
+                          <label htmlFor="file" className="cursor-pointer">
+                            <span className="text-sm text-red-500 hover:text-red-600 underline">
+                              Changer le fichier
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {errors.file && <p className="mt-1 text-sm text-red-500">{errors.file}</p>}
+                </div>
+
+                <div className="flex justify-end">
+                  <Button type="submit" disabled={uploading} className="bg-red-500 hover:bg-red-600">
+                    {uploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Upload en cours...
+                      </>
+                    ) : (
+                      "Ajouter le dossier"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         )}
 
         {/* Medical Records List */}
-        <div className={`${isDark ? "bg-gray-800" : "bg-white"} rounded-lg shadow-md overflow-hidden`}>
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold">Mes dossiers ({medicalRecords.length})</h2>
-          </div>
-
-          {medicalRecords.length === 0 ? (
-            <div className="p-6 text-center">
-              <div className={`text-5xl mb-4 ${isDark ? "text-gray-600" : "text-gray-300"}`}>{renderIcon("file")}</div>
-              <h3 className="text-lg font-medium mb-2">Aucun dossier médical</h3>
-              <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                Vous n'avez pas encore ajouté de dossier médical.
-              </p>
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="mt-4 bg-[#f05050] text-white px-4 py-2 rounded-lg hover:bg-[#e04040] transition-colors"
-              >
-                Ajouter votre premier dossier
-              </button>
-            </div>
-          ) : (
-            <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-              {medicalRecords.map((record) => (
-                <li key={record.id} className="p-4">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-start">
-                      <div
-                        className={`h-10 w-10 rounded-lg flex items-center justify-center text-white ${
-                          isDark ? "bg-gray-700" : "bg-gray-200"
-                        } mr-3`}
-                      >
-                        {renderIcon("file")}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Mes dossiers ({medicalRecords.length})</span>
+              {loading && <Loader2 className="w-5 h-5 animate-spin" />}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-500">Chargement des dossiers médicaux...</p>
+              </div>
+            ) : medicalRecords.length === 0 ? (
+              <div className="text-center py-12">
+                <File className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun dossier médical</h3>
+                <p className="text-gray-500 mb-4">Vous n'avez pas encore ajouté de dossier médical.</p>
+                <Button onClick={() => setShowAddForm(true)} className="bg-red-500 hover:bg-red-600">
+                  Ajouter votre premier dossier
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {medicalRecords.map((record) => (
+                  <div key={record.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-start space-x-4">
+                      <div className="bg-gray-100 p-2 rounded-lg">
+                        <File className="w-6 h-6 text-gray-600" />
                       </div>
                       <div>
-                        <h3 className="font-medium">{record.title}</h3>
-                        <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          <div className="flex items-center mr-4">
-                            <span className="mr-1">{renderIcon("mail")}</span>
+                        <h3 className="font-medium text-gray-900">{record.title}</h3>
+                        <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500 mt-1 space-y-1 sm:space-y-0 sm:space-x-4">
+                          <div className="flex items-center">
+                            <Mail className="w-4 h-4 mr-1" />
                             <span>{record.doctorEmail}</span>
                           </div>
-                          <div className="flex items-center mt-1 sm:mt-0">
-                            <span className="mr-1">{renderIcon("calendar")}</span>
+                          <div className="flex items-center">
+                            <Calendar className="w-4 h-4 mr-1" />
                             <span>{formatDate(record.date)}</span>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center">
-                      <div className="mr-4">{renderStatusBadge(record.status)}</div>
-                      <button
+                    <div className="flex items-center space-x-3">
+                      {renderStatusBadge(record.status)}
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleDeleteRecord(record.id)}
-                        className="text-red-500 hover:text-red-700 transition-colors"
-                        title="Supprimer"
+                        disabled={deleting}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
                       >
-                        {renderIcon("trash")}
-                      </button>
+                        {deleting && recordToDelete?.id === record.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </Button>
                     </div>
                   </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Image Preview Modal */}
+        {showImageModal && imagePreview && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="relative max-w-4xl max-h-full">
+              <img
+                src={imagePreview || "/placeholder.svg"}
+                alt="Aperçu en grand"
+                className="max-w-full max-h-full object-contain rounded-lg"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="absolute top-4 right-4 bg-white/90 hover:bg-white"
+                onClick={() => setShowImageModal(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
+            <Card className="w-full max-w-md mx-4">
+              <CardHeader>
+                <CardTitle>Confirmer la suppression</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-6">
+                  Êtes-vous sûr de vouloir supprimer ce dossier médical ? Cette action est irréversible.
+                </p>
+                <div className="flex justify-end space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsDeleteModalOpen(false)
+                      setRecordToDelete(null)
+                    }}
+                    disabled={deleting}
+                  >
+                    Annuler
+                  </Button>
+                  <Button variant="destructive" onClick={handleDeleteRecordBB()} disabled={deleting}>
+                    {deleting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Suppression...
+                      </>
+                    ) : (
+                      "Supprimer"
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-export default MedRec;
+export default MedRec

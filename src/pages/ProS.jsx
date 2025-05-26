@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
-import car from "../assets/car.png"
 
 const ProS = () => {
   const navigate = useNavigate()
@@ -14,7 +13,7 @@ const ProS = () => {
 
   // Modified availability state to cycle through three states
   const [availabilityState, setAvailabilityState] = useState(0) // 0: disponible, 1: disponible pour appel, 2: indisponible
-  const availabilityStates = ["disponible", "disponible pour appel", "indisponible"]
+  const availabilityStates = ["Available", "Available for call", "Unavailable"]
   const availabilityColors = [
     "bg-green-500 hover:bg-green-600",
     "bg-yellow-500 hover:bg-yellow-600",
@@ -27,21 +26,21 @@ const ProS = () => {
   // Vehicle connection state
   const [showVehiclePopup, setShowVehiclePopup] = useState(false)
   const [vehicleConnected, setVehicleConnected] = useState(true)
-  const [macAddress] = useState("00:1A:2B:3C:4D:5E") 
+  const [macAddress] = useState("00:1A:2B:3C:4D:5E")
   const [ipAddress] = useState("192.168.255.1")
 
-  // État pour les demandes de prise en charge - Filtré pour n'inclure que les alertes Haute et Moyenne
+  // État pour les demandes de prise en charge - All alerts set to High severity
   const [patientRequests, setPatientRequests] = useState([
     {
       id: 1,
-      name: "Marie Dupont",
+      name: "Sami Benali",
       age: 42,
-      urgency: "Moyenne",
+      urgency: "Haute",
       status: "pending",
       timestamp: "2023-06-15T10:30:00",
       location: "Chambre 302, Aile Est",
       phone: "06 12 34 56 78",
-      email: "marie.dupont@example.com",
+      email: "sami.benali@example.com",
       height: "165 cm",
       weight: "62 kg",
       medicalRecords: [
@@ -54,14 +53,14 @@ const ProS = () => {
     },
     {
       id: 2,
-      name: "Jean Martin",
+      name: "Nadia Bouzid",
       age: 65,
       urgency: "Haute",
       status: "pending",
       timestamp: "2023-06-15T09:45:00",
       location: "Chambre 105, Aile Ouest",
       phone: "06 98 76 54 32",
-      email: "jean.martin@example.com",
+      email: "nadia.bouzid@example.com",
       height: "178 cm",
       weight: "80 kg",
       medicalRecords: [
@@ -74,18 +73,18 @@ const ProS = () => {
     },
   ])
 
-  // État pour les patients pris en charge
+  // État pour les patients pris en charge - Set to High severity
   const [acceptedPatients, setAcceptedPatients] = useState([
     {
       id: 4,
-      name: "Pierre Dubois",
+      name: "Karim Zerrouki",
       age: 55,
-      urgency: "Moyenne",
+      urgency: "Haute",
       status: "accepted",
       timestamp: "2023-06-14T16:20:00",
       location: "Chambre 210, Aile Nord",
       phone: "06 45 67 89 10",
-      email: "pierre.dubois@example.com",
+      email: "karim.zerrouki@example.com",
       height: "182 cm",
       weight: "75 kg",
       medicalRecords: [
@@ -159,6 +158,11 @@ const ProS = () => {
     setShowVehiclePopup(false)
   }
 
+  const connectVehicle = () => {
+    setVehicleConnected(true)
+    setShowVehiclePopup(false)
+  }
+
   // Fonction pour afficher les détails du patient
   const showPatientDetails = (patient) => {
     setSelectedPatient(patient)
@@ -222,10 +226,10 @@ const ProS = () => {
     })
   }
 
-  // Données pour les statistiques
+  // Modified stats - replaced "Pending requests" with "Connect vehicle"
   const stats = [
     {
-      label: "Statut",
+      label: "Status",
       value: availabilityStates[availabilityState],
       icon: "activity",
       color:
@@ -236,13 +240,14 @@ const ProS = () => {
             : "bg-red-100 text-red-600",
     },
     {
-      label: "Demandes en attente",
-      value: patientRequests.length,
-      icon: "clock",
-      color: "bg-blue-100 text-blue-600",
+      label: "Connect vehicle",
+      value: vehicleConnected ? "Connected" : "Disconnected",
+      icon: "car",
+      color: vehicleConnected ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600",
+      action: openVehiclePopup,
     },
     {
-      label: "Patients pris en charge",
+      label: "Patient under care",
       value: acceptedPatients.length,
       icon: "users",
       color: "bg-purple-100 text-purple-600",
@@ -736,7 +741,7 @@ const ProS = () => {
               <h3 className="font-medium">
                 {user.result.name} {user.result.lastName}
               </h3>
-              <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>Professionnel de santé</p>
+              <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>Healthcare Professional</p>
             </div>
           </div>
         </div>
@@ -753,7 +758,7 @@ const ProS = () => {
                 }`}
               >
                 <span className="mr-3 h-5 w-5">{renderIcon("home")}</span>
-                <span className="font-medium">Tableau de bord</span>
+                <span className="font-medium">Dashboard</span>
               </button>
             </li>
 
@@ -767,7 +772,7 @@ const ProS = () => {
                 }`}
               >
                 <span className="mr-3 h-5 w-5">{renderIcon("settings")}</span>
-                <span className="font-medium">Paramètres</span>
+                <span className="font-medium">Settings</span>
               </button>
             </li>
             <li>
@@ -780,7 +785,7 @@ const ProS = () => {
                 }`}
               >
                 <span className="mr-3 h-5 w-5">{renderIcon("history")}</span>
-                <span className="font-medium">Historique</span>
+                <span className="font-medium">Notifications</span>
               </button>
             </li>
             <li>
@@ -793,7 +798,7 @@ const ProS = () => {
                 }`}
               >
                 <span className="mr-3 h-5 w-5">{renderIcon("help-circle")}</span>
-                <span className="font-medium">Aide</span>
+                <span className="font-medium">Help</span>
               </button>
             </li>
           </ul>
@@ -807,7 +812,7 @@ const ProS = () => {
             } transition-all duration-200`}
           >
             <span className="mr-2 h-5 w-5">{renderIcon("log-out")}</span>
-            <span className="font-medium">Déconnexion</span>
+            <span className="font-medium">Logout</span>
           </button>
         </div>
       </div>
@@ -828,7 +833,7 @@ const ProS = () => {
                   <div className="h-8 w-8 rounded-full bg-[#f05050] flex items-center justify-center text-white font-bold mr-2">
                     E
                   </div>
-                  <h2 className="text-lg font-bold">E-mergency Pro</h2>
+                  <h2 className="text-lg font-bold">E-mergency </h2>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)}>{renderIcon("x")}</button>
               </div>
@@ -846,7 +851,7 @@ const ProS = () => {
                     }`}
                   >
                     <span className="mr-3 h-5 w-5">{renderIcon("home")}</span>
-                    <span className="font-medium">Tableau de bord</span>
+                    <span className="font-medium">Dashboard</span>
                   </button>
                 </li>
                 <li>
@@ -859,7 +864,7 @@ const ProS = () => {
                     }`}
                   >
                     <span className="mr-3 h-5 w-5">{renderIcon("users")}</span>
-                    <span className="font-medium">Mes patients</span>
+                    <span className="font-medium">My Patients</span>
                   </button>
                 </li>
                 <li>
@@ -872,7 +877,7 @@ const ProS = () => {
                     }`}
                   >
                     <span className="mr-3 h-5 w-5">{renderIcon("settings")}</span>
-                    <span className="font-medium">Paramètres</span>
+                    <span className="font-medium">Settings</span>
                   </button>
                 </li>
                 <li>
@@ -885,7 +890,7 @@ const ProS = () => {
                     }`}
                   >
                     <span className="mr-3 h-5 w-5">{renderIcon("history")}</span>
-                    <span className="font-medium"> Historique</span>
+                    <span className="font-medium">History</span>
                   </button>
                 </li>
                 <li>
@@ -898,7 +903,7 @@ const ProS = () => {
                     }`}
                   >
                     <span className="mr-3 h-5 w-5">{renderIcon("help-circle")}</span>
-                    <span className="font-medium">Aide</span>
+                    <span className="font-medium">Help</span>
                   </button>
                 </li>
                 <li>
@@ -911,7 +916,7 @@ const ProS = () => {
                     }`}
                   >
                     <span className="mr-3 h-5 w-5">{renderIcon("log-out")}</span>
-                    <span className="font-medium">Déconnexion</span>
+                    <span className="font-medium">Logout</span>
                   </button>
                 </li>
               </ul>
@@ -923,18 +928,11 @@ const ProS = () => {
       {/* Main Content */}
       <div className={`flex-1 overflow-auto ${selectedPatient || showVehiclePopup ? "filter blur-sm" : ""}`}>
         {/* Desktop Header */}
-        <div
-          className={`hidden md:flex items-center justify-between p-6 ${isDark ? "bg-gray-800" : "bg-white"} shadow-sm`}
-        >
-          <div className="flex items-center">
-            <h1 className="text-2xl font-bold">Tableau de bord</h1>
-          </div>
-        </div>
 
         <div className="p-6">
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-6">
-              Bienvenue, {user.result.name} {user.result.lastName}
+            <h2 className="text-xl font-semibold mt-6 mb-6">
+              Welcome, {user.result.name} {user.result.lastName}
             </h2>
 
             {/* Modified availability button with cycling states */}
@@ -954,21 +952,24 @@ const ProS = () => {
               </button>
 
               {/* Vehicle connection button */}
-              <button
-                onClick={openVehiclePopup}
-                className="px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center bg-[#f05050] hover:bg-[#f05060] text-white"
-              >
-                <span className="mr-2 h-5 w-5">{renderIcon("car")}</span>
-                <span>Connecter véhicule</span>
-              </button>
-            </div>
+                      <button
+                      onClick={openVehiclePopup}
+                      className="px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center bg-[#f05050] hover:bg-[#f05060] text-white"
+                      >
+                      <span className="mr-2 h-5 w-5">{renderIcon("car")}</span>
+                      <span>
+                        {vehicleConnected ? "Disconnect" : "Connect vehicle"}
+                      </span>
+                      </button>
+                    </div>
 
-            {/* Stats Cards */}
+                    {/* Stats Cards - Modified to include clickable vehicle connection */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {stats.map((stat, index) => (
                 <div
                   key={index}
-                  className={`${isDark ? "bg-gray-800" : "bg-white"} rounded-lg shadow-sm p-6 flex items-center`}
+                  className={`${isDark ? "bg-gray-800" : "bg-white"} rounded-lg shadow-sm p-6 flex items-center ${stat.action ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`}
+                  onClick={stat.action}
                 >
                   <div className={`${stat.color} p-4 rounded-full mr-5`}>
                     <span className="h-6 w-6 block">{renderIcon(stat.icon)}</span>
@@ -981,9 +982,9 @@ const ProS = () => {
               ))}
             </div>
 
-            {/* Demandes de prise en charge */}
+            {/* Care requests */}
             <div className="mb-8">
-              <h3 className="text-lg font-semibold mb-4">Demandes de prise en charge</h3>
+              <h3 className="text-lg font-semibold mb-4">Alerts</h3>
               <div className={`${isDark ? "bg-gray-800" : "bg-white"} rounded-lg shadow-sm overflow-hidden`}>
                 {patientRequests.length > 0 ? (
                   <div className="overflow-x-auto">
@@ -993,8 +994,8 @@ const ProS = () => {
                       >
                         <tr>
                           <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Patient</th>
-                          <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Âge</th>
-                          <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Urgence</th>
+                          <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Age</th>
+                          <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Emergency</th>
                           <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Date</th>
                           <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Actions</th>
                         </tr>
@@ -1019,16 +1020,10 @@ const ProS = () => {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">{patient.age} ans</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{patient.age} years</td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span
-                                className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                  patient.urgency === "Haute"
-                                    ? "bg-red-100 text-red-800"
-                                    : "bg-yellow-100 text-yellow-800"
-                                }`}
-                              >
-                                {patient.urgency}
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                High
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(patient.timestamp)}</td>
@@ -1044,7 +1039,7 @@ const ProS = () => {
                                   }`}
                                   disabled={availabilityState === 2 || hasActiveIntervention}
                                 >
-                                  Accepter
+                                  Accept
                                 </button>
                                 <button
                                   onClick={(e) => {
@@ -1053,7 +1048,7 @@ const ProS = () => {
                                   }}
                                   className="text-red-600 hover:text-red-900 dark:hover:text-red-400"
                                 >
-                                  Refuser
+                                  Decline
                                 </button>
                               </div>
                             </td>
@@ -1064,9 +1059,7 @@ const ProS = () => {
                   </div>
                 ) : (
                   <div className="p-6 text-center">
-                    <p className={`${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                      Aucune demande de prise en charge en attente
-                    </p>
+                    <p className={`${isDark ? "text-gray-400" : "text-gray-500"}`}>No pending care requests</p>
                   </div>
                 )}
               </div>
@@ -1074,7 +1067,7 @@ const ProS = () => {
 
             {/* Patients pris en charge */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Patients pris en charge</h3>
+              <h3 className="text-lg font-semibold mb-4">Patient under care</h3>
               <div className={`${isDark ? "bg-gray-800" : "bg-white"} rounded-lg shadow-sm overflow-hidden`}>
                 {acceptedPatients.length > 0 ? (
                   <div className="overflow-x-auto">
@@ -1084,8 +1077,8 @@ const ProS = () => {
                       >
                         <tr>
                           <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Patient</th>
-                          <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Âge</th>
-                          <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Urgence</th>
+                          <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Age</th>
+                          <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Emergency</th>
                           <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Date</th>
                           <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider">Actions</th>
                         </tr>
@@ -1110,16 +1103,10 @@ const ProS = () => {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">{patient.age} ans</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{patient.age} years</td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span
-                                className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                  patient.urgency === "Haute"
-                                    ? "bg-red-100 text-red-800"
-                                    : "bg-yellow-100 text-yellow-800"
-                                }`}
-                              >
-                                {patient.urgency}
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                High
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(patient.timestamp)}</td>
@@ -1131,7 +1118,7 @@ const ProS = () => {
                                 }}
                                 className="text-red-600 hover:text-red-900 dark:hover:text-red-400"
                               >
-                                Annuler la prise en charge
+                                Cancel the patient's care
                               </button>
                             </td>
                           </tr>
@@ -1141,9 +1128,7 @@ const ProS = () => {
                   </div>
                 ) : (
                   <div className="p-6 text-center">
-                    <p className={`${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                      Aucun patient pris en charge actuellement
-                    </p>
+                    <p className={`${isDark ? "text-gray-400" : "text-gray-500"}`}>No patients currently under care</p>
                   </div>
                 )}
               </div>
@@ -1169,7 +1154,7 @@ const ProS = () => {
             <div className="mb-6">
               <h2 className="text-xl font-bold mb-4 flex items-center">
                 <span className="mr-2 h-6 w-6">{renderIcon("car")}</span>
-                Connexion véhicule
+                Vehicle Connection
               </h2>
 
               <div className="space-y-4">
@@ -1182,15 +1167,15 @@ const ProS = () => {
                         : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                     }`}
                   >
-                    {vehicleConnected ? "connected" : "disconnected"}
+                    {vehicleConnected ? "Connected" : "Disconnected"}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                  <span className="font-medium">Mac address:</span>
+                  <span className="font-medium">MAC address:</span>
                   <span className="font-mono text-sm">{macAddress}</span>
                 </div>
-                
+
                 <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
                   <span className="font-medium">IP address:</span>
                   <span className="font-mono text-sm">{ipAddress}</span>
@@ -1199,12 +1184,19 @@ const ProS = () => {
             </div>
 
             <div className="flex justify-end space-x-3">
-              {vehicleConnected && (
+              {vehicleConnected ? (
                 <button
                   onClick={disconnectVehicle}
                   className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                 >
                   Disconnect
+                </button>
+              ) : (
+                <button
+                  onClick={connectVehicle}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  Connect
                 </button>
               )}
               <button
@@ -1220,7 +1212,7 @@ const ProS = () => {
         </div>
       )}
 
-      {/* Modal pour les détails du patient */}
+      {/* Modal for patient details */}
       {selectedPatient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={closePatientDetails}>
           <div
@@ -1310,19 +1302,19 @@ const ProS = () => {
                 </div>
               </div>
 
-              {/* Symptômes actuels */}
+              {/* Current Symptoms */}
               <div className="mb-6">
-                <h3 className="font-semibold mb-2">Symptômes actuels:</h3>
+                <h3 className="font-semibold mb-2">Current Symptoms:</h3>
                 <p className={`p-3 rounded-lg ${isDark ? "bg-gray-700" : "bg-gray-100"}`}>
                   {selectedPatient.currentSymptoms}
                 </p>
               </div>
             </div>
 
-            {/* Afficher la carte uniquement pour les alertes de haute urgence */}
+            {/* Show the map for all high urgency alerts (which is now all alerts) */}
             {selectedPatient.urgency === "Haute" && (
               <div className="mt-6">
-                <h3 className="font-semibold mb-3">Localisation du patient</h3>
+                <h3 className="font-semibold mb-3">Patient location</h3>
                 <div className="h-[300px] rounded-lg overflow-hidden">
                   <div className="h-full w-full">
                     <MapContainer
@@ -1360,7 +1352,7 @@ const ProS = () => {
                     }`}
                     disabled={availabilityState === 2 || hasActiveIntervention}
                   >
-                    Accepter la prise en charge
+                    Accept care
                   </button>
                   <button
                     onClick={() => {
@@ -1369,7 +1361,7 @@ const ProS = () => {
                     }}
                     className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                   >
-                    Refuser
+                    Decline
                   </button>
                 </>
               ) : (
@@ -1380,7 +1372,7 @@ const ProS = () => {
                   }}
                   className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                 >
-                  Annuler la prise en charge
+                  Cancel care
                 </button>
               )}
               <button
@@ -1389,7 +1381,7 @@ const ProS = () => {
                   isDark ? "bg-gray-700 text-gray-300 hover:bg-gray-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
               >
-                Fermer
+                Close
               </button>
             </div>
           </div>
