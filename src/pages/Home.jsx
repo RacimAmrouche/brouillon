@@ -57,29 +57,16 @@ const Home = ({ isDarkMode }) => {
           <section className="w-full max-w-4xl mb-16">
             <h2 className="text-4xl font-bold mb-6">WHO ARE WE?</h2>
 
-            <div className="flex flex-wrap">
-              <div className="w-full md:w-2/3 text-center md:text-left px-4">
-                <p className="mb-4">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet massa ullamcorper,
-                  venenatis erat a, fermentum sem. Vestibulum nisl elit, porttitor at viverra vel, rutrum et lorem.
-                </p>
-                <p className="mb-4">
-                  Maecenas mattis ultrices quam, varius tristique lacus scelerisque vitae. Integer tincidunt enim sed
-                  nisi ullamcorper, a auctor mi aliquet. Donec quis sagittis massa. Donec in lorem nec lacus imperdiet
-                  porta efficitur id lorem.
-                </p>
-       
-                <p>
-                  Integer mauris justo, pulvinar in risus sed, ornare semper tortor. Vestibulum lac ac sollicitudin
-                  porta. Etiam fermentum mauris nec eros consectetur tincidunt. Nunc sed iaculis metus, sit amet auctor
-                  dui. Phasellus justo est, auctor luctus dolor a, varius molestie arcu. Ut quis augue malesuada,
-                  sollicitudin magna et, finibus velit.
-                </p>
-              </div>
-              <div className="w-full md:w-1/3 flex items-center justify-center mt-6 md:mt-0">
-                {/* Emplacement pour le dessin/image */}
-                <div className="text-4xl font-bold">*DESSIN*</div>
-              </div>
+            <div className="text-center px-4">
+              <p className="mb-4">
+                We Are the E-mergency team we introduce an innovative medical assistance application leveraging the Internet of Things IOT and IA to enhance emergency management. It targets risks associated with chronic conditions like diabetes and cardiovascular diseases, offering crucial support in critical situations such as driving.
+              </p>
+              <p className="mb-4">
+                Our platform provides real-time alerts to individuals, their contacts, and emergency services, utilizing a deep neural network for anomaly detection. Built with a secure, hybrid cloud architecture, it ensures high availability, scalability, and robust data protection.
+              </p>
+              <p>
+                Developed with expertise in software engineering and cybersecurity, this solution demonstrates technical feasibility for real-world use. We aim to improve patient quality of life by offering enhanced safety and peace of mind during unexpected health events.
+              </p>
             </div>
           </section>
         </main>

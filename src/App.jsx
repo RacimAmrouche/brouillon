@@ -31,6 +31,7 @@ import MedRec from "./pages/MedRec";
 import Features from "./pages/Features";
 import { DarkModeProvider } from "./components/layouts/DarkModeContext";
 import Notifications from "./pages/Notifications";
+import NotifPro from "./pages/NotifPro";
 
 function App() {
   const router = createBrowserRouter(
@@ -58,6 +59,7 @@ function App() {
         <Route path="MedRec" element={<MedRec/>} />
         <Route path="Features" element={<Features/>} />
         <Route path="Notifications" element={<Notifications />} />
+        <Route path="NotifPro" element={<NotifPro />} />
       </Route>
     )
   );

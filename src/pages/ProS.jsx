@@ -127,7 +127,7 @@ const ProS = () => {
         navigate("/help")
         break
       case "history":
-        navigate("/HistPro")
+        navigate("/NotifPro")
         break
       case "logout":
         // Implement logout logic

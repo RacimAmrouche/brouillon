@@ -586,8 +586,8 @@ const handleDeleteMedRec = async () => {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Mes Dossiers Médicaux</h1>
-          <p className="text-gray-600 mt-2">Gérez vos dossiers médicaux et ordonnances</p>
+          <h1 className="text-3xl font-bold text-gray-900">My Medical Records</h1>
+          <p className="text-gray-600 mt-2">Manage your medical records and prescriptions</p>
         </div>
       </div>
 
@@ -610,12 +610,12 @@ const handleDeleteMedRec = async () => {
             {showAddForm ? (
               <>
                 <X className="w-4 h-4 mr-2" />
-                Annuler
+                Cancel
               </>
             ) : (
               <>
                 <Plus className="w-4 h-4 mr-2" />
-                Ajouter un dossier médical
+                Add a medical record
               </>
             )}
           </Button>
@@ -625,19 +625,19 @@ const handleDeleteMedRec = async () => {
         {showAddForm && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Ajouter un nouveau dossier médical</CardTitle>
+              <CardTitle>Add a new medical record</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="title">Titre du dossier</Label>
+                  <Label htmlFor="title">Record title</Label>
                   <Input
                     type="text"
                     id="title"
                     name="title"
                     value={newRecord.title}
                     onChange={handleInputChange}
-                    placeholder="Ex: Radiographie du genou"
+                    placeholder="Ex: Knee X-ray"
                     className="mt-1"
                     disabled={uploading}
                   />
@@ -645,7 +645,7 @@ const handleDeleteMedRec = async () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="doctorEmail">Email du médecin</Label>
+                  <Label htmlFor="doctorEmail">Doctor's email</Label>
                   <div className="relative mt-1">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
@@ -654,7 +654,7 @@ const handleDeleteMedRec = async () => {
                       name="doctorEmail"
                       value={newRecord.doctorEmail}
                       onChange={handleInputChange}
-                      placeholder="docteur@example.com"
+                      placeholder="doctor@example.com"
                       className="pl-10"
                       disabled={uploading}
                     />
@@ -663,7 +663,7 @@ const handleDeleteMedRec = async () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="file">Image du dossier médical</Label>
+                  <Label htmlFor="file">Medical record image</Label>
                   <div className="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-6">
                     <input
                       type="file"
@@ -684,9 +684,9 @@ const handleDeleteMedRec = async () => {
                         <div className="flex flex-col items-center">
                           <Upload className="w-8 h-8 text-red-500 mb-2" />
                           <span className="text-sm font-medium">
-                            {newRecord.file ? newRecord.file.name : "Cliquez pour sélectionner une image"}
+                            {newRecord.file ? newRecord.file.name : "Click to select an image"}
                           </span>
-                          <span className="text-xs text-gray-500 mt-1">PNG, JPG ou PDF jusqu'à 10MB</span>
+                          <span className="text-xs text-gray-500 mt-1">PNG, JPG or PDF up to 10MB</span>
                         </div>
                       </label>
                     ) : (
@@ -694,14 +694,14 @@ const handleDeleteMedRec = async () => {
                         {/* File info */}
                         <div className="text-center">
                           <span className="text-sm font-medium text-gray-700">{newRecord.file.name}</span>
-                          <p className="text-xs text-gray-500 mt-1">PNG, JPG ou PDF jusqu'à 10MB</p>
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG or PDF up to 10MB</p>
                         </div>
 
                         {/* Image preview */}
                         <div className="relative">
                           <img
                             src={imagePreview || "/placeholder.svg"}
-                            alt="Aperçu du fichier"
+                            alt="File preview"
                             className="w-full max-h-48 object-contain rounded-lg bg-gray-50 border"
                           />
                           <div className="absolute top-2 right-2 flex space-x-2">
@@ -713,7 +713,7 @@ const handleDeleteMedRec = async () => {
                               onClick={() => setShowImageModal(true)}
                             >
                               <Eye className="w-3 h-3 mr-1" />
-                              Voir en grand
+                              View large
                             </Button>
                             <Button
                               type="button"
@@ -734,7 +734,7 @@ const handleDeleteMedRec = async () => {
                         <div className="text-center">
                           <label htmlFor="file" className="cursor-pointer">
                             <span className="text-sm text-red-500 hover:text-red-600 underline">
-                              Changer le fichier
+                              Change file
                             </span>
                           </label>
                         </div>
@@ -749,10 +749,10 @@ const handleDeleteMedRec = async () => {
                     {uploading ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Upload en cours...
+                        Uploading...
                       </>
                     ) : (
-                      "Ajouter le dossier"
+                      "Add record"
                     )}
                   </Button>
                 </div>
@@ -765,7 +765,7 @@ const handleDeleteMedRec = async () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Mes dossiers ({medicalRecords.length})</span>
+              <span>My records ({medicalRecords.length})</span>
               {loading && <Loader2 className="w-5 h-5 animate-spin" />}
             </CardTitle>
           </CardHeader>
@@ -773,15 +773,15 @@ const handleDeleteMedRec = async () => {
             {loading ? (
               <div className="text-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-500">Chargement des dossiers médicaux...</p>
+                <p className="text-gray-500">Loading medical records...</p>
               </div>
             ) : medicalRecords.length === 0 ? (
               <div className="text-center py-12">
                 <File className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun dossier médical</h3>
-                <p className="text-gray-500 mb-4">Vous n'avez pas encore ajouté de dossier médical.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No medical record</h3>
+                <p className="text-gray-500 mb-4">You have not added any medical record yet.</p>
                 <Button onClick={() => setShowAddForm(true)} className="bg-red-500 hover:bg-red-600">
-                  Ajouter votre premier dossier
+                  Add your first record
                 </Button>
               </div>
             ) : (
@@ -835,7 +835,7 @@ const handleDeleteMedRec = async () => {
             <div className="relative max-w-4xl max-h-full">
               <img
                 src={imagePreview || "/placeholder.svg"}
-                alt="Aperçu en grand"
+                alt="Large preview"
                 className="max-w-full max-h-full object-contain rounded-lg"
               />
               <Button
@@ -855,11 +855,11 @@ const handleDeleteMedRec = async () => {
           <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
             <Card className="w-full max-w-md mx-4">
               <CardHeader>
-                <CardTitle>Confirmer la suppression</CardTitle>
+                <CardTitle>Confirm deletion</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 mb-6">
-                  Êtes-vous sûr de vouloir supprimer ce dossier médical ? Cette action est irréversible.
+                  Are you sure you want to delete this medical record? This action is irreversible.
                 </p>
                 <div className="flex justify-end space-x-3">
                   <Button
@@ -870,16 +870,16 @@ const handleDeleteMedRec = async () => {
                     }}
                     disabled={deleting}
                   >
-                    Annuler
+                    Cancel
                   </Button>
                   <Button variant="destructive" onClick={handleDeleteRecordBB()} disabled={deleting}>
                     {deleting ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Suppression...
+                        Deleting...
                       </>
                     ) : (
-                      "Supprimer"
+                      "Delete"
                     )}
                   </Button>
                 </div>

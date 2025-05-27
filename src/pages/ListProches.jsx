@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const ListProches = () => {
     const navigate = useNavigate();
@@ -22,31 +23,122 @@ const ListProches = () => {
         phoneNumber: ''
     });
 
+
     // Load user data from localStorage
-    useEffect(() => {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            const userData = JSON.parse(storedUser);
-            setUser(userData);
-            
-            // Load proches from localStorage or initialize empty array
-            const storedProches = localStorage.getItem("proches");
-            if (storedProches) {
-                setProches(JSON.parse(storedProches));
-            } else {
-                // Sample data for demonstration
-                const sampleProches = [
-                    { id: 1, firstName: 'Jean', lastName: 'Dupont', phoneNumber: '0612345678' },
-                    { id: 2, firstName: 'Marie', lastName: 'Martin', phoneNumber: '0687654321' },
-                    { id: 3, firstName: 'Pierre', lastName: 'Durand', phoneNumber: '0698765432' }
-                ];
-                setProches(sampleProches);
-                localStorage.setItem("proches", JSON.stringify(sampleProches));
-            }
+/*
+const MaComponent = () => {
+  
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+
+    if (!storedUser) {
+      navigate("/PatientSignin");
+      return;
+    }
+
+    const userData = JSON.parse(storedUser);
+    setUser(userData);
+
+    // Appel à l'API backend
+    const fetchProches = async () => {
+      try {
+        const response = await axios.post(
+          "http://localhost:5001/api/procheaddsupp/recupListContact",
+          JSON.stringify(userData.result.uid), // ID du patient dans le body
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (Array.isArray(response.data)) {
+          setProches(response.data);
+          localStorage.setItem("proches", JSON.stringify(response.data));
         } else {
-            window.location.href = "/PatientSignin";
+          console.warn("Aucun contact trouvé ou réponse inattendue :", response.data);
+          setProches([]);
         }
-    }, []);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des proches :", error);
+        setProches([]);
+      }
+    };
+
+    fetchProches();
+  }, []);
+
+  // Le reste de ton composant ic
+}*/
+
+
+
+
+useEffect(() => {
+  const storedUser = localStorage.getItem("user");
+  if (!storedUser) {
+    window.location.href = "/PatientSignin";
+    return;
+  }
+
+  const userData = JSON.parse(storedUser);
+  setUser(userData);
+
+  const storedProches = localStorage.getItem("proches");
+  if (storedProches) {
+    try {
+      const parsedProches = JSON.parse(storedProches);
+      setProches(parsedProches);
+    } catch {
+      console.warn("Erreur de parsing dans localStorage, liste proche vide");
+      setProches([]);
+    }
+  } else {
+    setProches([]);
+  }
+}, []);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Filter proches based on search term
     const filteredProches = proches.filter(proche => {
@@ -108,11 +200,18 @@ const ListProches = () => {
         setIsModalOpen(true);
     };
 
+
+
+
     // Open confirmation modal for deleting proche
-    const handleDeleteClick = (proche) => {
+   const handleDeleteClick = (proche) => {
+    
         setCurrentProche(proche);
-        setIsDeleteModalOpen(true);
-    };
+        setIsDeleteModalOpen(true); // Ouvre le modal de confirmation visuel (ou de feedback)
+
+};
+
+
 
     // Confirm deletion of proche
     const confirmDelete = () => {
@@ -127,6 +226,7 @@ const ListProches = () => {
     // Save proche from modal (add or update)
     const handleSaveProche = () => {
         // Validate form
+
         if (!formData.firstName || !formData.lastName || !formData.phoneNumber) {
             alert("Veuillez remplir tous les champs");
             return;
@@ -182,6 +282,237 @@ const ListProches = () => {
         setIsAddFormVisible(false);
     };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                        //TODO:YOUSRA CODE TODO:
+        //FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:  /FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:  /FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:                                                                  CE QUE JAI RAJOUYTERRRR
+    const handleAddProcheADDD= async (e) => {e.preventDefault();
+    try {
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) {
+            console.error("Aucun utilisateur trouvé dans localStorage");
+            return;
+        }
+
+        const userData = JSON.parse(storedUser);
+        const formDataToSend = new FormData();
+        formDataToSend.append('PatientUID', userData.result.uid);
+        formDataToSend.append('PhoneNumber', addFormData.phoneNumber);
+        formDataToSend.append('Name', `${addFormData.firstName} ${addFormData.lastName}`);
+
+        // DEBUG: afficher ce qu'on envoie
+        for (let pair of formDataToSend.entries()) {
+          console.log(pair[0] + ': ' + pair[1]);
+        }
+
+        const response = await axios.post('http://192.168.1.4:5001/api/procheaddsupp/addedit', formDataToSend, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        console.log("Réponse du serveur :", response.data);
+
+         const nouveauProche = {
+          id: response.data,
+          firstName: addFormData.firstName,
+          lastName: addFormData.lastName,
+          phoneNumber: addFormData.phoneNumber
+};
+        localStorage.setItem('proches', response.data);
+        // Met à jour la liste des proches
+        setProches(prev => [...prev, nouveauProche]);
+
+        // Reset form
+        setAddFormData({ firstName: '', lastName: '', phoneNumber: '' });
+
+    } catch (error) {
+        console.error("Erreur lors de l'ajout du proche :", error);
+    }
+};
+
+    //FIXME: /FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:  /FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:  /FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:  /FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:  ce que j'ai rajouterrrrr
+
+
+
+
+
+
+
+
+
+
+    const confirmDeleteSure = async () => {
+   // if (!currentProche || !currentProche.id) return;
+
+    try {
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) {
+            console.error("Aucun utilisateur trouvé dans localStorage");
+            return;
+        }
+        
+        const userData = JSON.parse(storedUser);
+        const formData = new FormData();
+        formData.append("PatientUID",userData.result.uid);      // Variable que tu dois avoir dans ton composant
+         formData.append("ProcheID", currentProche.id); //
+
+        console.log(userData.result.uid);
+        console.log(currentProche.id);
+
+        const response = await axios.post("http://192.168.1.4:5001/api/procheaddsupp/delete", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            }
+        });
+
+        console.log("Suppression réussie :", response.data);
+
+        // Supprimer le proche dans l’état local
+        setProches(prev => prev.filter(p => p.id !== currentProche.id));
+
+        // Fermer le modal
+        setIsDeleteModalOpen(false);
+        setCurrentProche(null);
+
+        // Tu peux aussi ajouter un toast ici si tu veux
+    } catch (error) {
+        console.error("Erreur suppression :", error.response?.data || error.message);
+    }
+};
+
+
+
+
+
+
+
+
+const handleSaveProcheDone = async () => {
+    if (!formData.firstName || !formData.lastName || !formData.phoneNumber) {
+        alert("Vous n'avez rien changé");
+        return;
+    }
+
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+        alert("Utilisateur non connecté");
+        return;
+    }
+
+    const userData = JSON.parse(storedUser);
+    const fullName = `${formData.firstName} ${formData.lastName}`;
+
+    const formToSend = new FormData();
+    formToSend.append("PatientUID", userData.result.uid);
+    formToSend.append("Name", fullName);
+    formToSend.append("PhoneNumber", formData.phoneNumber);
+
+    // Si on est en mode modification, on ajoute le ProcheID
+    if (currentProche && currentProche.id) {
+        formToSend.append("ProcheID", currentProche.id);
+    }
+
+    try {
+        const response = await axios.post("http://192.168.1.4:5001/api/procheaddsupp/addedit", formToSend, {
+            headers: { "Content-Type": "multipart/form-data" }
+        });
+
+        console.log("Réponse du serveur :", response.data);
+
+        let updatedProches;
+
+        if (currentProche) {
+            // Mise à jour du proche
+            updatedProches = proches.map(p =>
+                p.id === currentProche.id ? { ...p, ...formData } : p
+            );
+        } else {
+            // Ajout d’un nouveau proche avec ID du backend (si dispo)
+            const newProche = {
+                id: response.data.ProcheID || Date.now(), // fallback si backend ne le donne pas
+                ...formData
+            };
+            updatedProches = [...proches, newProche];
+        }
+
+        setProches(updatedProches);
+        localStorage.setItem("proches", JSON.stringify(updatedProches));
+        setIsModalOpen(false);
+        setCurrentProche(null);
+        setFormData({ firstName: "", lastName: "", phoneNumber: "" });
+
+    } catch (error) {
+        console.error("Erreur lors de l'enregistrement du proche :", error);
+        alert("Erreur serveur : impossible d'enregistrer le proche.");
+    }
+};
+
+
+
+
+ 
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+const ALLLLLL = () => {
+  localStorage.removeItem("proches");
+  // Facultatif : si tu veux aussi vider le state React
+  setProches([]);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // Go back to dashboard
     const handleBack = () => {
         navigate('/Patient');
@@ -231,7 +562,7 @@ const ListProches = () => {
                         >
                             {renderIcon('back')}
                         </button>
-                        <h1 className="text-xl font-bold">My Contacts</h1>
+                        <h1 className="text-xl font-bold">Friends</h1>
                     </div>
                     <button 
                         onClick={toggleAddForm}
@@ -301,6 +632,7 @@ const ListProches = () => {
                                 <button
                                     type="submit"
                                     className="bg-[#f05050] text-white px-4 py-2 rounded-lg hover:bg-[#e04040]"
+                                    onClick={handleAddProcheADDD} //FIXME: appelle ta fonction au clic
                                 >
                                     Add
                                 </button>
@@ -450,7 +782,7 @@ const ListProches = () => {
                                 Cancel
                             </button>
                             <button
-                                onClick={handleSaveProche}
+                                onClick={handleSaveProcheDone}
                                 className="bg-[#f05050] text-white px-4 py-2 rounded-lg hover:bg-[#e04040]"
                             >
                                 Save
@@ -472,17 +804,17 @@ const ListProches = () => {
                         </div>
                         <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700">
                             <button
-                                onClick={() => setIsDeleteModalOpen(false)}
-                                className={`px-4 py-2 rounded-lg mr-2 ${
-                                    isDark 
-                                        ? 'bg-gray-700 hover:bg-gray-600' 
-                                        : 'bg-gray-200 hover:bg-gray-300'
-                                }`}
+                                 onClick={() => setIsDeleteModalOpen(false)}
+                                  className={`px-4 py-2 rounded-lg mr-2 ${
+                                isDark 
+                                   ? 'bg-gray-700 hover:bg-gray-600' 
+                                   : 'bg-gray-200 hover:bg-gray-300'
+    }`}
                             >
                                 Cancel
                             </button>
                             <button
-                                onClick={confirmDelete}
+                                onClick={confirmDeleteSure}
                                 className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
                             >
                                 Delete
@@ -496,3 +828,8 @@ const ListProches = () => {
 };
 
 export default ListProches;
+
+
+
+
+//       <form onSubmit={handleAddFormSubmit}>
