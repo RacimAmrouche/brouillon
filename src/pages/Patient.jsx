@@ -5,8 +5,14 @@ import { useNavigate } from "react-router-dom"
 import car from "../assets/car.png"
 import watch from "../assets/watch.png"
 import cgm from "../assets/CGM.png"
+import { Logout } from "../../services/auth"
+import { AlerteRouge, AlerteOrange } from "../../services/alerts"
+
 const Patient = () => {
   const navigate = useNavigate()
+
+  const [location, setLocation] = useState(null)
+  const [error, setError] = useState(null)
   const [activeItem, setActiveItem] = useState("dashboard")
   const [isDark, setIsDark] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -82,6 +88,83 @@ const Patient = () => {
     }
   }
 
+  // Add these functions for backend alert calls
+  const handleBackendCriticalAlert = async () => {
+    try {
+      const formData = new FormData()
+      formData.append("IdPatientt", user.result.uid)
+      formData.append("longitude", "3.18468")
+      formData.append("latitude", "36.71617")
+      const response = await AlerteRouge(formData)
+      const data = response.data
+      console.log("Backend response:", data)
+      alert("Critical alert sent to emergency services! 🚨\n" + data.message)
+    } catch (error) {
+      console.log("Alert submission error:", error)
+      alert("Failed to send critical alert ❌")
+    }
+  }
+
+  const handleBackendModerateAlert = async () => {
+    try {
+      const formData = new FormData()
+      formData.append("raison", "hypo")
+      formData.append("idPatientt", user.result.uid)
+      formData.append("longitude", "36.71617")
+      formData.append("latitude", "3.18468")
+      const response = await AlerteOrange(formData)
+      const data = response.data
+      console.log("Backend response:", data)
+      alert("Moderate alert sent successfully! ⚠️\n" + data)
+    } catch (error) {
+      console.log("Alert submission error:", error)
+      alert("Failed to send moderate alert ❌")
+    }
+  }
+
+  // Enhanced handleAlertClick function with consistent data
+  const handleAlertClick = async () => {
+    try {
+      const formData = new FormData()
+      formData.append("IdPatientt", user.result.uid)
+      formData.append("longitude", "3.1839")
+      formData.append("latitude", "36.7125")
+
+      const response = await AlerteRouge(formData)
+      const data = response.data
+
+      console.log("Backend response:", data)
+
+      alert("Alert sent successfully! 🚨\n" + data.message)
+    } catch (error) {
+      console.log("Alert submission error:", error)
+
+      alert("failed to send alert ❌")
+    }
+  }
+
+  //pr diabete
+
+  const handleAlertClick2 = async () => {
+    try {
+      const formData = new FormData()
+      formData.append("raison", "hypo") // ou "hyper"
+      formData.append("idPatientt", user.result.uid)
+      formData.append("longitude", "36.71617")
+      formData.append("latitude", "3.18468")
+
+      const response = await AlerteOrange(formData) // appel à ton service frontend
+      const data = response.data
+
+      console.log("Backend response:", data)
+
+      alert("Alerte envoyée avec succès ! \n" + data)
+    } catch (error) {
+      console.log("Alert submission error:", error)
+      alert("Échec de l'envoi de l'alerte ❌")
+    }
+  }
+
   // Device connection handlers
   const handleSmartwatchConnection = () => {
     if (deviceConnections.smartwatch.connected) {
@@ -99,7 +182,7 @@ const Patient = () => {
         smartwatch: { connected: true, name: "Apple Watch Series 9", battery: 85, macAddress },
       }))
       alert(
-        `⌚ Montre connectée avec succès!\nAppareil: Apple Watch Series 9\nBatterie: 85%\nMAC Address: ${macAddress}`,
+        `⌚ Montre connectée avec succès!\nMAC Address: ${macAddress}`,
       )
     }
   }
@@ -120,7 +203,7 @@ const Patient = () => {
         cgm: { connected: true, name: "FreeStyle Libre 3", lastReading: new Date(), macAddress },
       }))
       alert(
-        `📊 CGM connecté avec succès!\nAppareil: FreeStyle Libre 3\nDernière lecture: ${new Date().toLocaleTimeString()}\nMAC Address: ${macAddress}`,
+        `📊 CGM connecté avec succès!\nMAC Address: ${macAddress}`,
       )
     }
   }
@@ -142,7 +225,7 @@ const Patient = () => {
         vehicle: { connected: true, name: "Tesla Model 3", status: "Stationnée", ipAddress, macAddress },
       }))
       alert(
-        `🚗 Véhicule connecté avec succès!\nVéhicule: Tesla Model 3\nStatut: Stationnée\nIP Address: ${ipAddress}\nMAC Address: ${macAddress}`,
+        `🚗 Véhicule connecté avec succès!\nIP Address: ${ipAddress}\nMAC Address: ${macAddress}`,
       )
     }
   }
@@ -246,9 +329,12 @@ const Patient = () => {
     )
     setSimulatedAlerts((prev) => ({
       ...prev,
-      glucose: { active: true, type: "moderate", value: 145 },
+      glucose: { active: true, type: "moderate", value: 150 },
     }))
     setAlertTriggers((prev) => ({ ...prev, glucose: true }))
+
+    // Also send backend alert
+    handleBackendModerateAlert()
 
     setTimeout(() => {
       setSimulatedAlerts((prev) => ({
@@ -263,9 +349,12 @@ const Patient = () => {
     alert("⚠️ MODERATE HEART RATE ALERT: Heart rate is slightly elevated. Please rest and monitor your condition.")
     setSimulatedAlerts((prev) => ({
       ...prev,
-      heartRate: { active: true, type: "moderate", value: 105 },
+      heartRate: { active: true, type: "moderate", value: 110 },
     }))
     setAlertTriggers((prev) => ({ ...prev, heartRate: true }))
+
+    // Also send backend alert
+    handleBackendModerateAlert()
 
     setTimeout(() => {
       setSimulatedAlerts((prev) => ({
@@ -280,9 +369,12 @@ const Patient = () => {
     alert("⚠️ MODERATE BLOOD PRESSURE ALERT: Blood pressure is slightly elevated. Please rest and monitor.")
     setSimulatedAlerts((prev) => ({
       ...prev,
-      bloodPressure: { active: true, type: "moderate", systolic: 135, diastolic: 88 },
+      bloodPressure: { active: true, type: "moderate", systolic: 145, diastolic: 92 },
     }))
     setAlertTriggers((prev) => ({ ...prev, bloodPressure: true }))
+
+    // Also send backend alert
+    handleBackendModerateAlert()
 
     setTimeout(() => {
       setSimulatedAlerts((prev) => ({
@@ -297,9 +389,12 @@ const Patient = () => {
     alert("⚠️ MODERATE OXYGEN ALERT: Oxygen saturation is slightly low. Please ensure proper breathing and monitor.")
     setSimulatedAlerts((prev) => ({
       ...prev,
-      oxygen: { active: true, type: "moderate", value: 94 },
+      oxygen: { active: true, type: "moderate", value: 93 },
     }))
     setAlertTriggers((prev) => ({ ...prev, oxygen: true }))
+
+    // Also send backend alert
+    handleBackendModerateAlert()
 
     setTimeout(() => {
       setSimulatedAlerts((prev) => ({
@@ -315,11 +410,16 @@ const Patient = () => {
     alert(
       "🚨 CRITICAL GLUCOSE ALERT: Blood glucose levels are dangerously low! Seek immediate medical attention and consume fast-acting carbohydrates.",
     )
+
+    // Set simulated alert with clear critical value
     setSimulatedAlerts((prev) => ({
       ...prev,
-      glucose: { active: true, type: "critical", value: 55 },
+      glucose: { active: true, type: "critical", value: 65 },
     }))
     setAlertTriggers((prev) => ({ ...prev, glucose: true }))
+
+    // Also send backend alert
+    handleBackendCriticalAlert()
 
     setTimeout(() => {
       setSimulatedAlerts((prev) => ({
@@ -336,9 +436,12 @@ const Patient = () => {
     )
     setSimulatedAlerts((prev) => ({
       ...prev,
-      heartRate: { active: true, type: "critical", value: 45 },
+      heartRate: { active: true, type: "critical", value: 40 },
     }))
     setAlertTriggers((prev) => ({ ...prev, heartRate: true }))
+
+    // Also send backend alert
+    handleBackendCriticalAlert()
 
     setTimeout(() => {
       setSimulatedAlerts((prev) => ({
@@ -353,9 +456,12 @@ const Patient = () => {
     alert("🚨 CRITICAL BLOOD PRESSURE ALERT: Blood pressure is dangerously high! Seek immediate medical attention.")
     setSimulatedAlerts((prev) => ({
       ...prev,
-      bloodPressure: { active: true, type: "critical", systolic: 180, diastolic: 110 },
+      bloodPressure: { active: true, type: "critical", systolic: 185, diastolic: 115 },
     }))
     setAlertTriggers((prev) => ({ ...prev, bloodPressure: true }))
+
+    // Also send backend alert
+    handleBackendCriticalAlert()
 
     setTimeout(() => {
       setSimulatedAlerts((prev) => ({
@@ -370,9 +476,12 @@ const Patient = () => {
     alert("🚨 CRITICAL OXYGEN ALERT: Oxygen saturation is critically low! Seek immediate medical attention.")
     setSimulatedAlerts((prev) => ({
       ...prev,
-      oxygen: { active: true, type: "critical", value: 88 },
+      oxygen: { active: true, type: "critical", value: 85 },
     }))
     setAlertTriggers((prev) => ({ ...prev, oxygen: true }))
+
+    // Also send backend alert
+    handleBackendCriticalAlert()
 
     setTimeout(() => {
       setSimulatedAlerts((prev) => ({
@@ -463,9 +572,28 @@ const Patient = () => {
         break
       case "logout":
         console.log("Logging out...")
+        handleLogout()
         break
       default:
         break
+    }
+  }
+
+  const handleLogout = async () => {
+    const formData = new FormData()
+    formData.append("Id", user.result.uid)
+    formData.append("Role", "10")
+    try {
+      console.log("ici logout")
+      const response = await Logout(formData)
+      const data = response.data
+      console.log("Réponse du back :", data)
+      localStorage.removeItem("user")
+      alert(" Logout successful ✅")
+      navigate("/")
+    } catch (error) {
+      console.log("Logout failed", error)
+      alert("Logout failed ❌")
     }
   }
 
@@ -475,12 +603,12 @@ const Patient = () => {
     const alertLevel = getValueAlertLevel("glucose", currentValue)
 
     if (alertLevel === "critical") {
-      return { status: "Critique", color: "#EF4444", bgColor: "#FEE2E2" }
+      return { status: "Critique", color: "#DC2626", bgColor: "#FEE2E2", textColor: "#DC2626" }
     }
     if (alertLevel === "moderate") {
-      return { status: "Modéré", color: "#F59E0B", bgColor: "#FEF3C7" }
+      return { status: "Modéré", color: "#EA580C", bgColor: "#FED7AA", textColor: "#EA580C" }
     }
-    return { status: "Normal", color: "#10B981", bgColor: "#D1FAE5" }
+    return { status: "Normal", color: "#10B981", bgColor: "#D1FAE5", textColor: "#10B981" }
   }
 
   const getHeartRateStatus = () => {
@@ -488,12 +616,12 @@ const Patient = () => {
     const alertLevel = getValueAlertLevel("heartRate", currentValue)
 
     if (alertLevel === "critical") {
-      return { status: "Critique", color: "#EF4444", bgColor: "#FEE2E2" }
+      return { status: "Critique", color: "#DC2626", bgColor: "#FEE2E2", textColor: "#DC2626" }
     }
     if (alertLevel === "moderate") {
-      return { status: "Modéré", color: "#F59E0B", bgColor: "#FEF3C7" }
+      return { status: "Modéré", color: "#EA580C", bgColor: "#FED7AA", textColor: "#EA580C" }
     }
-    return { status: "Normal", color: "#10B981", bgColor: "#D1FAE5" }
+    return { status: "Normal", color: "#10B981", bgColor: "#D1FAE5", textColor: "#10B981" }
   }
 
   const getBloodPressureStatus = () => {
@@ -502,12 +630,12 @@ const Patient = () => {
     const alertLevel = getValueAlertLevel("bloodPressure", currentSystolic, currentSystolic, currentDiastolic)
 
     if (alertLevel === "critical") {
-      return { status: "Critique", color: "#EF4444", bgColor: "#FEE2E2" }
+      return { status: "Critique", color: "#DC2626", bgColor: "#FEE2E2", textColor: "#DC2626" }
     }
     if (alertLevel === "moderate") {
-      return { status: "Modéré", color: "#F59E0B", bgColor: "#FEF3C7" }
+      return { status: "Modéré", color: "#EA580C", bgColor: "#FED7AA", textColor: "#EA580C" }
     }
-    return { status: "Normale", color: "#10B981", bgColor: "#D1FAE5" }
+    return { status: "Normale", color: "#10B981", bgColor: "#D1FAE5", textColor: "#10B981" }
   }
 
   const getOxygenStatus = () => {
@@ -515,113 +643,113 @@ const Patient = () => {
     const alertLevel = getValueAlertLevel("oxygen", currentValue)
 
     if (alertLevel === "critical") {
-      return { status: "Critique", color: "#EF4444", bgColor: "#FEE2E2" }
+      return { status: "Critique", color: "#DC2626", bgColor: "#FEE2E2", textColor: "#DC2626" }
     }
     if (alertLevel === "moderate") {
-      return { status: "Modéré", color: "#F59E0B", bgColor: "#FEF3C7" }
+      return { status: "Modéré", color: "#EA580C", bgColor: "#FED7AA", textColor: "#EA580C" }
     }
-    return { status: "Normal", color: "#10B981", bgColor: "#D1FAE5" }
+    return { status: "Normal", color: "#10B981", bgColor: "#D1FAE5", textColor: "#10B981" }
   }
 
   // Device Connection Status Component
   const DeviceConnectionStatus = () => {
     return (
       <div className={`${isDark ? "bg-gray-800" : "bg-white"} rounded-lg shadow-md p-6 mb-6`}>
-      <h3 className="text-lg font-semibold mb-4 text-gray-800">Connected Devices</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Smartwatch Connection */}
-        <div className="flex flex-col space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-          <img src={watch} alt="Smartwatch" className="w-8 h-8" />
-          <span className="font-medium">Smartwatch</span>
+        <h3 className="text-lg font-semibold mb-4 text-gray-800">Connected Devices</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Smartwatch Connection */}
+          <div className="flex flex-col space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <img src={watch || "/placeholder.svg"} alt="Smartwatch" className="w-8 h-8" />
+                <span className="font-medium">Smartwatch</span>
+              </div>
+              <div
+                className={`w-3 h-3 rounded-full ${deviceConnections.smartwatch.connected ? "bg-green-500" : "bg-gray-300"}`}
+              ></div>
+            </div>
+            {deviceConnections.smartwatch.connected && (
+              <div className="text-sm text-gray-600 space-y-1">
+                <p className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                  MAC: {deviceConnections.smartwatch.macAddress}
+                </p>
+              </div>
+            )}
+            <button
+              onClick={handleSmartwatchConnection}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                deviceConnections.smartwatch.connected
+                  ? "bg-red-100 text-red-700 hover:bg-red-200"
+                  : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+              }`}
+            >
+              {deviceConnections.smartwatch.connected ? "Disconnect" : "Connect"}
+            </button>
           </div>
-          <div
-          className={`w-3 h-3 rounded-full ${deviceConnections.smartwatch.connected ? "bg-green-500" : "bg-gray-300"}`}
-          ></div>
-        </div>
-        {deviceConnections.smartwatch.connected && (
-          <div className="text-sm text-gray-600 space-y-1">
-          <p className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-            MAC: {deviceConnections.smartwatch.macAddress}
-          </p>
-          </div>
-        )}
-        <button
-          onClick={handleSmartwatchConnection}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-          deviceConnections.smartwatch.connected
-            ? "bg-red-100 text-red-700 hover:bg-red-200"
-            : "bg-blue-100 text-blue-700 hover:bg-blue-200"
-          }`}
-        >
-          {deviceConnections.smartwatch.connected ? "Disconnect" : "Connect"}
-        </button>
-        </div>
 
-        {/* CGM Connection */}
-        <div className="flex flex-col space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-          <img src={cgm} alt="CGM" className="w-8 h-8" />
-          <span className="font-medium">CGM</span>
+          {/* CGM Connection */}
+          <div className="flex flex-col space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <img src={cgm || "/placeholder.svg"} alt="CGM" className="w-8 h-8" />
+                <span className="font-medium">CGM</span>
+              </div>
+              <div
+                className={`w-3 h-3 rounded-full ${deviceConnections.cgm.connected ? "bg-green-500" : "bg-gray-300"}`}
+              ></div>
+            </div>
+            {deviceConnections.cgm.connected && (
+              <div className="text-sm text-gray-600 space-y-1">
+                <p className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                  MAC: {deviceConnections.cgm.macAddress}
+                </p>
+              </div>
+            )}
+            <button
+              onClick={handleCGMConnection}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                deviceConnections.cgm.connected
+                  ? "bg-red-100 text-red-700 hover:bg-red-200"
+                  : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+              }`}
+            >
+              {deviceConnections.cgm.connected ? "Disconnect" : "Connect"}
+            </button>
           </div>
-          <div
-          className={`w-3 h-3 rounded-full ${deviceConnections.cgm.connected ? "bg-green-500" : "bg-gray-300"}`}
-          ></div>
-        </div>
-        {deviceConnections.cgm.connected && (
-          <div className="text-sm text-gray-600 space-y-1">
-          <p className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-            MAC: {deviceConnections.cgm.macAddress}
-          </p>
-          </div>
-        )}
-        <button
-          onClick={handleCGMConnection}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-          deviceConnections.cgm.connected
-            ? "bg-red-100 text-red-700 hover:bg-red-200"
-            : "bg-blue-100 text-blue-700 hover:bg-blue-200"
-          }`}
-        >
-          {deviceConnections.cgm.connected ? "Disconnect" : "Connect"}
-        </button>
-        </div>
 
-        {/* Vehicle Connection */}
-        <div className="flex flex-col space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-          <img src={car} alt="Vehicle" className="w-8 h-8" />
-          <span className="font-medium">Vehicle</span>
+          {/* Vehicle Connection */}
+          <div className="flex flex-col space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <img src={car || "/placeholder.svg"} alt="Vehicle" className="w-8 h-8" />
+                <span className="font-medium">Vehicle</span>
+              </div>
+              <div
+                className={`w-3 h-3 rounded-full ${deviceConnections.vehicle.connected ? "bg-green-500" : "bg-gray-300"}`}
+              ></div>
+            </div>
+            {deviceConnections.vehicle.connected && (
+              <div className="text-sm text-gray-600 space-y-1">
+                <p className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                  IP: {deviceConnections.vehicle.ipAddress}
+                </p>
+                <p className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                  MAC: {deviceConnections.vehicle.macAddress}
+                </p>
+              </div>
+            )}
+            <button
+              onClick={handleVehicleConnection}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                deviceConnections.vehicle.connected
+                  ? "bg-red-100 text-red-700 hover:bg-red-200"
+                  : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+              }`}
+            >
+              {deviceConnections.vehicle.connected ? "Disconnect" : "Connect"}
+            </button>
           </div>
-          <div
-          className={`w-3 h-3 rounded-full ${deviceConnections.vehicle.connected ? "bg-green-500" : "bg-gray-300"}`}
-          ></div>
         </div>
-        {deviceConnections.vehicle.connected && (
-          <div className="text-sm text-gray-600 space-y-1">
-          <p className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-            IP: {deviceConnections.vehicle.ipAddress}
-          </p>
-          <p className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-            MAC: {deviceConnections.vehicle.macAddress}
-          </p>
-          </div>
-        )}
-        <button
-          onClick={handleVehicleConnection}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-          deviceConnections.vehicle.connected
-            ? "bg-red-100 text-red-700 hover:bg-red-200"
-            : "bg-blue-100 text-blue-700 hover:bg-blue-200"
-          }`}
-        >
-          {deviceConnections.vehicle.connected ? "Disconnect" : "Connect"}
-        </button>
-        </div>
-      </div>
       </div>
     )
   }
@@ -680,7 +808,6 @@ const Patient = () => {
 
           {globalAlertStatus.activeAlerts.length > 0 && (
             <div className="flex items-center space-x-2">
-            
               <div className="text-xs text-gray-500">{globalAlertStatus.timestamp?.toLocaleTimeString()}</div>
             </div>
           )}
@@ -766,8 +893,8 @@ const Patient = () => {
       </span>
     )
   }
- 
-  // Critical Alert Button Component (Red)
+
+  // Critical Alert Button Component (Red) - Enhanced with handleAlertClick
   const CriticalAlertButton = ({ onClick, isActive, position = "top-right" }) => {
     const positionClasses = {
       "top-right": "top-2 right-2",
@@ -776,19 +903,17 @@ const Patient = () => {
       "bottom-left": "bottom-2 left-2",
     }
 
-  /* BOUTON ALERTE ROUGE  return (
-   <button
-        onClick={onClick}
-        className={`absolute ${positionClasses[position]} w-7 h-7 rounded-full border-2 transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
-          isActive
-            ? "bg-red-500 border-red-600 animate-pulse shadow-lg"
-            : "bg-gray-100 border-gray-300 hover:bg-red-100 hover:border-red-400"
+    return (
+      <button
+        onClick={onClick} // Use the passed onClick function instead of handleAlertClick
+        className={`absolute ${positionClasses[position]} w-8 h-8 rounded-full transition-all duration-200 hover:scale-110 focus:outline-none ${
+          isActive ? "bg-red-500 animate-pulse shadow-lg" : "bg-transparent hover:bg-red-100"
         }`}
-        title="Trigger Critical Alert"
+        title="Trigger Emergency Alert - Sends current vital signs to emergency services"
       >
-        <span className={`text-xs font-bold ${isActive ? "text-white" : "text-red-500"}`}>🚨</span>
+        <span className="text-lg">🚨</span>
       </button>
-    )*/
+    )
   }
 
   // Moderate Alert Button Component (Orange)
@@ -799,20 +924,18 @@ const Patient = () => {
       "bottom-right": "bottom-2 right-2",
       "bottom-left": "bottom-2 left-2",
     }
-  /*
+
     return (
       <button
-        onClick={onClick}
-        className={`absolute ${positionClasses[position]} w-7 h-7 rounded-full border-2 transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
-          isActive
-            ? "bg-orange-500 border-orange-600 animate-pulse shadow-lg"
-            : "bg-gray-100 border-gray-300 hover:bg-orange-100 hover:border-orange-400"
+        onClick={onClick} // Use the passed onClick function instead of handleAlertClick2
+        className={`absolute ${positionClasses[position]} w-8 h-8 rounded-full transition-all duration-200 hover:scale-110 focus:outline-none ${
+          isActive ? "bg-orange-500 animate-pulse shadow-lg" : "bg-transparent hover:bg-orange-100"
         }`}
         title="Trigger Moderate Alert"
       >
-        <span className={`text-xs font-bold ${isActive ? "text-white" : "text-orange-500"}`}>⚠️</span>
+        <span className="text-lg">⚠️</span>
       </button>
-    )*/
+    )
   }
 
   // Fonction pour rendre une icône simple
@@ -1043,8 +1166,6 @@ const Patient = () => {
   const displaySystolic = simulatedAlerts.bloodPressure.active ? simulatedAlerts.bloodPressure.systolic : systolic
   const displayDiastolic = simulatedAlerts.bloodPressure.active ? simulatedAlerts.bloodPressure.diastolic : diastolic
   const displayOxygen = simulatedAlerts.oxygen.active ? simulatedAlerts.oxygen.value : oxygenSat
-
-  console.log("Nom du patient:", user.result.name)
 
   return (
     <div
@@ -1323,7 +1444,7 @@ const Patient = () => {
                       className={`text-3xl font-bold transition-all duration-300 ${
                         simulatedAlerts.glucose.active ? "animate-pulse" : ""
                       }`}
-                      style={{ color: glucoseStatus.color }}
+                      style={{ color: glucoseStatus.textColor }}
                     >
                       {displayGlucose}
                     </div>
@@ -1341,48 +1462,48 @@ const Patient = () => {
               </div>
 
               {/* Heart Rate Widget */}
-                      <div
-                      className={`relative ${
-                        isDark ? "bg-gray-800 hover:bg-gray-700" : "bg-white hover:bg-gray-50"
-                      } rounded-lg shadow-md p-6 transition-all duration-200 transform hover:-translate-y-1 hover:shadow-lg cursor-pointer h-64 flex flex-col justify-between`}
-                      >
-                      <CriticalAlertButton
-                        onClick={triggerCriticalHeartRateAlert}
-                        isActive={simulatedAlerts.heartRate.active && simulatedAlerts.heartRate.type === "critical"}
-                        position="top-right"
-                      />
-                      <ModerateAlertButton
-                        onClick={triggerModerateHeartRateAlert}
-                        isActive={simulatedAlerts.heartRate.active && simulatedAlerts.heartRate.type === "moderate"}
-                        position="top-left"
-                      />
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-800">Heart Rate</h3>
-                        <div
-                          className="px-2 py-1 rounded-full text-xs font-medium"
-                          style={{
-                          backgroundColor: heartRateStatus.bgColor,
-                          color: heartRateStatus.color,
-                          }}
-                        >
-                          {heartRateStatus.status}
-                        </div>
-                        </div>
-                        <div className="text-center">
-                        <div
-                          className={`text-3xl font-bold transition-all duration-300 ${
-                          simulatedAlerts.heartRate.active ? "animate-pulse" : ""
-                          }`}
-                          style={{ color: heartRateStatus.color }}
-                        >
-                          {displayHeartRate}
-                        </div>
-                        <div className="text-sm text-gray-600">BPM</div>
-                        <div className="mt-2 flex justify-center">
-                          <div className="w-16 h-8 flex items-end space-x-1">
-                          {[...Array(8)].map((_, i) => (
-                            <div
+              <div
+                className={`relative ${
+                  isDark ? "bg-gray-800 hover:bg-gray-700" : "bg-white hover:bg-gray-50"
+                } rounded-lg shadow-md p-6 transition-all duration-200 transform hover:-translate-y-1 hover:shadow-lg cursor-pointer h-64 flex flex-col justify-between`}
+              >
+                <CriticalAlertButton
+                  onClick={triggerCriticalHeartRateAlert}
+                  isActive={simulatedAlerts.heartRate.active && simulatedAlerts.heartRate.type === "critical"}
+                  position="top-right"
+                />
+                <ModerateAlertButton
+                  onClick={triggerModerateHeartRateAlert}
+                  isActive={simulatedAlerts.heartRate.active && simulatedAlerts.heartRate.type === "moderate"}
+                  position="top-left"
+                />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-800">Heart Rate</h3>
+                    <div
+                      className="px-2 py-1 rounded-full text-xs font-medium"
+                      style={{
+                        backgroundColor: heartRateStatus.bgColor,
+                        color: heartRateStatus.color,
+                      }}
+                    >
+                      {heartRateStatus.status}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div
+                      className={`text-3xl font-bold transition-all duration-300 ${
+                        simulatedAlerts.heartRate.active ? "animate-pulse" : ""
+                      }`}
+                      style={{ color: heartRateStatus.textColor }}
+                    >
+                      {displayHeartRate}
+                    </div>
+                    <div className="text-sm text-gray-600">BPM</div>
+                    <div className="mt-2 flex justify-center">
+                      <div className="w-16 h-8 flex items-end space-x-1">
+                        {[...Array(8)].map((_, i) => (
+                          <div
                             key={i}
                             className="bg-current animate-pulse"
                             style={{
@@ -1391,93 +1512,93 @@ const Patient = () => {
                               color: heartRateStatus.color,
                               animationDelay: `${i * 0.1}s`,
                             }}
-                            />
-                          ))}
-                          </div>
-                        </div>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Normal: 60-100</span>
-                        <TrendIndicator
-                          trend={simulatedAlerts.heartRate.active ? "down" : "stable"}
-                          color={heartRateStatus.color}
-                        />
-                        </div>
+                          />
+                        ))}
                       </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Normal: 60-100</span>
+                    <TrendIndicator
+                      trend={simulatedAlerts.heartRate.active ? "down" : "stable"}
+                      color={heartRateStatus.color}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Blood Pressure Widget */}
+              <div
+                className={`relative ${
+                  isDark ? "bg-gray-800 hover:bg-gray-700" : "bg-white hover:bg-gray-50"
+                } rounded-lg shadow-md p-6 transition-all duration-200 transform hover:-translate-y-1 hover:shadow-lg cursor-pointer h-64 flex flex-col justify-between`}
+              >
+                <CriticalAlertButton
+                  onClick={triggerCriticalBloodPressureAlert}
+                  isActive={simulatedAlerts.bloodPressure.active && simulatedAlerts.bloodPressure.type === "critical"}
+                  position="top-right"
+                />
+                <ModerateAlertButton
+                  onClick={triggerModerateBloodPressureAlert}
+                  isActive={simulatedAlerts.bloodPressure.active && simulatedAlerts.bloodPressure.type === "moderate"}
+                  position="top-left"
+                />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-800">Blood Pressure</h3>
+                    <div
+                      className="px-2 py-1 rounded-full text-xs font-medium"
+                      style={{
+                        backgroundColor: bloodPressureStatus.bgColor,
+                        color: bloodPressureStatus.color,
+                      }}
+                    >
+                      {bloodPressureStatus.status}
+                    </div>
+                  </div>
+                  <div className="text-center space-y-2">
+                    <div className="flex items-center justify-center space-x-2">
+                      <div>
+                        <div
+                          className={`text-2xl font-bold transition-all duration-300 ${
+                            simulatedAlerts.bloodPressure.active ? "animate-pulse" : ""
+                          }`}
+                          style={{ color: bloodPressureStatus.textColor }}
+                        >
+                          {displaySystolic}
+                        </div>
+                        <div className="text-xs text-gray-600">SYS</div>
                       </div>
+                      <div className="text-2xl font-bold text-gray-400">/</div>
+                      <div>
+                        <div
+                          className={`text-2xl font-bold transition-all duration-300 ${
+                            simulatedAlerts.bloodPressure.active ? "animate-pulse" : ""
+                          }`}
+                          style={{ color: bloodPressureStatus.textColor }}
+                        >
+                          {displayDiastolic}
+                        </div>
+                        <div className="text-xs text-gray-600">DIA</div>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-600">mmHg</div>
+                    <div className="space-y-1">
+                      <ProgressBar value={displaySystolic} max={160} color={bloodPressureStatus.color} />
+                      <ProgressBar value={displayDiastolic} max={100} color={bloodPressureStatus.color} />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Normal: &lt;120/80</span>
+                    <TrendIndicator
+                      trend={simulatedAlerts.bloodPressure.active ? "up" : "stable"}
+                      color={bloodPressureStatus.color}
+                    />
+                  </div>
+                </div>
+              </div>
 
-                      {/* Blood Pressure Widget */}
-                              <div
-                              className={`relative ${
-                                isDark ? "bg-gray-800 hover:bg-gray-700" : "bg-white hover:bg-gray-50"
-                              } rounded-lg shadow-md p-6 transition-all duration-200 transform hover:-translate-y-1 hover:shadow-lg cursor-pointer h-64 flex flex-col justify-between`}
-                              >
-                              <CriticalAlertButton
-                                onClick={triggerCriticalBloodPressureAlert}
-                                isActive={simulatedAlerts.bloodPressure.active && simulatedAlerts.bloodPressure.type === "critical"}
-                                position="top-right"
-                              />
-                              <ModerateAlertButton
-                                onClick={triggerModerateBloodPressureAlert}
-                                isActive={simulatedAlerts.bloodPressure.active && simulatedAlerts.bloodPressure.type === "moderate"}
-                                position="top-left"
-                              />
-                              <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold text-gray-800">Blood Pressure</h3>
-                                <div
-                                  className="px-2 py-1 rounded-full text-xs font-medium"
-                                  style={{
-                                  backgroundColor: bloodPressureStatus.bgColor,
-                                  color: bloodPressureStatus.color,
-                                  }}
-                                >
-                                  {bloodPressureStatus.status}
-                                </div>
-                                </div>
-                                <div className="text-center space-y-2">
-                                <div className="flex items-center justify-center space-x-2">
-                                  <div>
-                                  <div
-                                    className={`text-2xl font-bold transition-all duration-300 ${
-                                    simulatedAlerts.bloodPressure.active ? "animate-pulse" : ""
-                                    }`}
-                                    style={{ color: bloodPressureStatus.color }}
-                                  >
-                                    {displaySystolic}
-                                  </div>
-                                  <div className="text-xs text-gray-600">SYS</div>
-                                  </div>
-                                  <div className="text-2xl font-bold text-gray-400">/</div>
-                                  <div>
-                                  <div
-                                    className={`text-2xl font-bold transition-all duration-300 ${
-                                    simulatedAlerts.bloodPressure.active ? "animate-pulse" : ""
-                                    }`}
-                                    style={{ color: bloodPressureStatus.color }}
-                                  >
-                                    {displayDiastolic}
-                                  </div>
-                                  <div className="text-xs text-gray-600">DIA</div>
-                                  </div>
-                                </div>
-                                <div className="text-sm text-gray-600">mmHg</div>
-                                <div className="space-y-1">
-                                  <ProgressBar value={displaySystolic} max={160} color={bloodPressureStatus.color} />
-                                  <ProgressBar value={displayDiastolic} max={100} color={bloodPressureStatus.color} />
-                                </div>
-                                </div>
-                                <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-600">Normal: &lt;120/80</span>
-                                <TrendIndicator
-                                  trend={simulatedAlerts.bloodPressure.active ? "up" : "stable"}
-                                  color={bloodPressureStatus.color}
-                                />
-                                </div>
-                              </div>
-                              </div>
-
-                              {/* Oxygen Saturation Widget */}
+              {/* Oxygen Saturation Widget */}
               <div
                 className={`relative ${
                   isDark ? "bg-gray-800 hover:bg-gray-700" : "bg-white hover:bg-gray-50"
@@ -1508,7 +1629,7 @@ const Patient = () => {
                   </div>
                   <div className="text-center">
                     <div className={simulatedAlerts.oxygen.active ? "animate-pulse" : ""}>
-                      <CircularProgress percentage={displayOxygen} color={oxygenStatus.color} size={100} />
+                      <CircularProgress percentage={displayOxygen} color={oxygenStatus.textColor} size={100} />
                     </div>
                     <div className="text-sm text-gray-600 mt-2">SpO₂</div>
                   </div>
@@ -1530,7 +1651,4 @@ const Patient = () => {
 }
 
 export default Patient
-
-
-
 

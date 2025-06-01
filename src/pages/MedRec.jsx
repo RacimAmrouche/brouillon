@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, File, Trash2, Mail, Calendar, Upload, X, Eye, Loader2 } from "lucide-react"
+import { Plus, File, Trash2, Mail, Calendar, Upload, X, Eye, Loader2, ChevronLeft } from 'lucide-react'
 import axios from "axios"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/layouts/ui/button"
 import { Input } from "@/components/layouts/ui/input"
 import { Label } from "@/components/layouts/ui/label"
@@ -10,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/layouts/u
 import { Badge } from "@/components/layouts/ui/badge"
 
 const MedRec = () => {
+  const navigate = useNavigate()
   const [medicalRecords, setMedicalRecords] = useState([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -19,6 +21,38 @@ const MedRec = () => {
   const [deleting, setDeleting] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
   const [showImageModal, setShowImageModal] = useState(false)
+  
+  const handleBack = () => {
+    navigate('/Patient');
+};
+
+// Render icons
+const renderIcon = (name) => {
+    switch(name) {
+        case 'search':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+        case 'edit':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>;
+        case 'delete':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+        case 'plus':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
+        case 'back':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
+        case 'phone':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>;
+        case 'user':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
+        case 'x':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+        case 'chevron-down':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
+        case 'chevron-up':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
+        default:
+            return null;
+    }
+};
 
   // You'll need to get this from your authentication system
   const [patientId] = useState("123e4567-e89b-12d3-a456-426614174000") // Replace with actual patient ID
@@ -233,12 +267,6 @@ const MedRec = () => {
     }
   }*/
 
-
-
-
-
-
-
   // Remplace ta fonction confirmDelete par celle-ci :
 const confirmDelete = async () => {
   if (recordToDelete === null) return;
@@ -255,34 +283,6 @@ const confirmDelete = async () => {
     setDeleting(false);
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   // Format date
   const formatDate = (dateString) => {
@@ -308,7 +308,7 @@ const confirmDelete = async () => {
       )
     } else if (status === "rejected") {
       return (
-        <Badge variant="secondary" className="bg-red-100 text-red-800">
+        <Badge variant="secondary" className="bg-[#f05050] text-red-800">
           Refusé
         </Badge>
       )
@@ -351,8 +351,6 @@ const confirmDelete = async () => {
        console.log("✅ idDossier enregistré :", idfDossier);
 
        }
-
-
 
       const newRecordData = {
       id: response.data, // ✅ ID du serveur, pas Date.now() !
@@ -464,7 +462,7 @@ const handleDeleteMedRec = async () => {
     // Nettoyage localStorage
     localStorage.removeItem("idDossier");
 
-    // Supprimer l’ID temporaire si stocké
+    // Supprimer l'ID temporaire si stocké
     //localStorage.removeItem("idDossier");
   } 
 
@@ -484,19 +482,6 @@ const handleDeleteMedRec = async () => {
 
 };
 */
-
-
-
-
-
-
-
-
-
-
-
-
-
 
  const handleDeleteRecordBB = async () => {
   // Confirmation avant suppression
@@ -555,24 +540,7 @@ const handleDeleteMedRec = async () => {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
    
-
-
-
 
  
 
@@ -586,8 +554,19 @@ const handleDeleteMedRec = async () => {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">My Medical Records</h1>
-          <p className="text-gray-600 mt-2">Manage your medical records and prescriptions</p>
+          <div className="flex items-center">
+          <button 
+                            onClick={handleBack}
+                            className="mr-4 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        >
+                            {renderIcon('back')}
+                        </button>
+            <div>
+         
+              <h1 className="text-3xl font-bold text-gray-900">MEDICAL RECORDS</h1>
+        
+            </div>
+          </div>
         </div>
       </div>
 
@@ -605,7 +584,12 @@ const handleDeleteMedRec = async () => {
           <Button
             onClick={() => setShowAddForm(!showAddForm)}
             disabled={uploading}
-            className={`${showAddForm ? "bg-gray-500 hover:bg-gray-600" : "bg-red-500 hover:bg-red-600"}`}
+            style={{
+              backgroundColor: showAddForm ? "#f05050" : "#f05050",
+              color: "#fff",
+              borderColor: "#f05050"
+            }}
+            className={`${showAddForm ? "hover:bg-[#e13d3d]" : "hover:bg-[#e13d3d]"}`}
           >
             {showAddForm ? (
               <>
@@ -682,7 +666,7 @@ const handleDeleteMedRec = async () => {
                         className={`cursor-pointer block text-center ${uploading ? "opacity-50" : ""}`}
                       >
                         <div className="flex flex-col items-center">
-                          <Upload className="w-8 h-8 text-red-500 mb-2" />
+                          <Upload className="w-8 h-8" style={{ color: "#f05050" }} />
                           <span className="text-sm font-medium">
                             {newRecord.file ? newRecord.file.name : "Click to select an image"}
                           </span>
@@ -711,6 +695,7 @@ const handleDeleteMedRec = async () => {
                               size="sm"
                               className="bg-white/90 hover:bg-white text-xs"
                               onClick={() => setShowImageModal(true)}
+                              style={{ color: "#f05050", borderColor: "#f05050" }}
                             >
                               <Eye className="w-3 h-3 mr-1" />
                               View large
@@ -724,6 +709,7 @@ const handleDeleteMedRec = async () => {
                                 setNewRecord({ ...newRecord, file: null })
                                 setImagePreview(null)
                               }}
+                              style={{ color: "#f05050", borderColor: "#f05050" }}
                             >
                               <X className="w-3 h-3" />
                             </Button>
@@ -733,7 +719,7 @@ const handleDeleteMedRec = async () => {
                         {/* Change file button */}
                         <div className="text-center">
                           <label htmlFor="file" className="cursor-pointer">
-                            <span className="text-sm text-red-500 hover:text-red-600 underline">
+                            <span className="text-sm" style={{ color: "#f05050" }}>
                               Change file
                             </span>
                           </label>
@@ -745,7 +731,16 @@ const handleDeleteMedRec = async () => {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={uploading} className="bg-red-500 hover:bg-red-600">
+                  <Button
+                    type="submit"
+                    disabled={uploading}
+                    style={{
+                      backgroundColor: "#f05050",
+                      color: "#fff",
+                      borderColor: "#f05050"
+                    }}
+                    className="hover:bg-[#e13d3d]"
+                  >
                     {uploading ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -780,7 +775,15 @@ const handleDeleteMedRec = async () => {
                 <File className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No medical record</h3>
                 <p className="text-gray-500 mb-4">You have not added any medical record yet.</p>
-                <Button onClick={() => setShowAddForm(true)} className="bg-red-500 hover:bg-red-600">
+                <Button
+                  onClick={() => setShowAddForm(true)}
+                  style={{
+                    backgroundColor: "#f05050",
+                    color: "#fff",
+                    borderColor: "#f05050"
+                  }}
+                  className="hover:bg-[#e13d3d]"
+                >
                   Add your first record
                 </Button>
               </div>
@@ -813,7 +816,8 @@ const handleDeleteMedRec = async () => {
                         size="sm"
                         onClick={() => handleDeleteRecord(record.id)}
                         disabled={deleting}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        style={{ color: "#f05050" }}
+                        className="hover:text-[#e13d3d] hover:bg-red-50"
                       >
                         {deleting && recordToDelete?.id === record.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -843,6 +847,7 @@ const handleDeleteMedRec = async () => {
                 size="sm"
                 className="absolute top-4 right-4 bg-white/90 hover:bg-white"
                 onClick={() => setShowImageModal(false)}
+                style={{ color: "#f05050", borderColor: "#f05050" }}
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -869,10 +874,21 @@ const handleDeleteMedRec = async () => {
                       setRecordToDelete(null)
                     }}
                     disabled={deleting}
+                    style={{ color: "#f05050", borderColor: "#f05050" }}
                   >
                     Cancel
                   </Button>
-                  <Button variant="destructive" onClick={handleDeleteRecordBB()} disabled={deleting}>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteRecordBB()}
+                    disabled={deleting}
+                    style={{
+                      backgroundColor: "#f05050",
+                      color: "#fff",
+                      borderColor: "#f05050"
+                    }}
+                    className="hover:bg-[#e13d3d]"
+                  >
                     {deleting ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { FinishAlert } from '../../services/pros';
 
 const RedirPros = () => {
     const navigate = useNavigate();
@@ -11,7 +12,7 @@ const RedirPros = () => {
     const [loading, setLoading] = useState(true);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [startTime, setStartTime] = useState(null);
-
+    const user = JSON.parse(localStorage.getItem("profile"));
     // Effet pour charger les données du patient depuis le localStorage
     useEffect(() => {
         const storedPatient = localStorage.getItem('currentIntervention');
@@ -94,6 +95,34 @@ const RedirPros = () => {
         }
     };
 
+    const FinishAl = async () => {
+        const user = JSON.parse(localStorage.getItem("user")); // ✅ attention ici : "user", pas "profile"
+        const current = JSON.parse(localStorage.getItem("currentIntervention"));
+      
+        if (!current || !user?.result?.uid || !current.idalert) {
+          alert("Aucune intervention en cours.");
+          return;
+        }
+      
+        const formData = new FormData();
+        formData.append("ProS", user.result.uid);
+        formData.append("IdAlert", current.idalert); // ✅ le bon champ selon ta structure
+      
+        try {
+          const response = await FinishAlert(formData);
+          console.log("Intervention terminée :", response.data);
+      
+          localStorage.removeItem("currentIntervention");
+          alert("Intervention clôturée avec succès !");
+          navigate("/ProS");
+        } catch (err) {
+          console.error("Erreur lors de la clôture :", err);
+          alert("Impossible de clôturer l'intervention.");
+        }
+      };
+      
+      
+      
     // Fonction pour rendre une icône simple
     const renderIcon = (name) => {
         switch(name) {
@@ -224,15 +253,7 @@ const RedirPros = () => {
                                     </div>
                                 </div>
                                 
-                                <div className="mb-6">
-                                    <h3 className="text-lg font-semibold mb-3 flex items-center">
-                                        <span className="h-5 w-5 mr-2">{renderIcon('activity')}</span>
-                                        Symptômes actuels
-                                    </h3>
-                                    <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                                        <p>{patient.currentSymptoms}</p>
-                                    </div>
-                                </div>
+                          
                             </div>
                             
                             <div>
@@ -291,7 +312,7 @@ const RedirPros = () => {
                         Annuler l'intervention
                     </button>
                     <button 
-                        onClick={handleComplete}
+                        onClick={FinishAl}
                         className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center"
                     >
                         <span className="h-5 w-5 mr-2">{renderIcon('check-circle')}</span>

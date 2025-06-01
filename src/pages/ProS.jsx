@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
+import { List } from "lucide-react"
+import { ListAlerts, SetStatus, InfoPat, Accept } from "../../services/pros"
+import { Logout } from "../../services/auth"
 
 const ProS = () => {
   const navigate = useNavigate()
@@ -29,77 +32,133 @@ const ProS = () => {
   const [macAddress] = useState("00:1A:2B:3C:4D:5E")
   const [ipAddress] = useState("192.168.255.1")
 
-  // État pour les demandes de prise en charge - All alerts set to High severity
-  const [patientRequests, setPatientRequests] = useState([
-    {
-      id: 1,
-      name: "Sami Benali",
-      age: 42,
-      urgency: "Haute",
-      status: "pending",
-      timestamp: "2023-06-15T10:30:00",
-      location: "Chambre 302, Aile Est",
-      phone: "06 12 34 56 78",
-      email: "sami.benali@example.com",
-      height: "165 cm",
-      weight: "62 kg",
-      medicalRecords: [
-        { condition: "Examen Physique Annuel", date: "2023-04-12" },
-        { condition: "Hypertension", date: "2023-02-18" },
-        { condition: "Diabète type 2", date: "2022-11-05" },
-      ],
-      currentSymptoms: "Douleurs thoraciques, essoufflement",
-      coordinates: [48.856614, 2.3522219], // Paris coordinates
-    },
-    {
-      id: 2,
-      name: "Nadia Bouzid",
-      age: 65,
-      urgency: "Haute",
-      status: "pending",
-      timestamp: "2023-06-15T09:45:00",
-      location: "Chambre 105, Aile Ouest",
-      phone: "06 98 76 54 32",
-      email: "nadia.bouzid@example.com",
-      height: "178 cm",
-      weight: "80 kg",
-      medicalRecords: [
-        { condition: "Insuffisance cardiaque", date: "2023-05-20" },
-        { condition: "AVC", date: "2020-08-15" },
-        { condition: "Cholestérol élevé", date: "2022-12-10" },
-      ],
-      currentSymptoms: "Douleur thoracique intense, sueurs froides, nausées",
-      coordinates: [48.869807, 2.3091074], // Champs-Élysées coordinates
-    },
-  ])
+  // États pour les alertes - maintenant récupérées depuis l'API
+  const [patientRequests, setPatientRequests] = useState([])
+  const [isLoadingAlerts, setIsLoadingAlerts] = useState(false)
+  const [alertsError, setAlertsError] = useState(null)
+  const handleLogout = async () => {
+    const formData = new FormData()
+    formData.append("Id", user.result.uid)
+    formData.append("Role", "20")
+    try {
+      console.log("ici logout")
+      const response = await Logout(formData)
+      const data = response.data
+      console.log("Réponse du back :", data)
+      localStorage.removeItem("user")
+      alert(" Logout successful ✅")
+      navigate("/")
+    } catch (error) {
+      console.log("Logout failed", error)
+      alert("Logout failed ❌")
+    }
+  }
 
-  // État pour les patients pris en charge - Set to High severity
-  const [acceptedPatients, setAcceptedPatients] = useState([
-    {
-      id: 4,
-      name: "Karim Zerrouki",
-      age: 55,
-      urgency: "Haute",
-      status: "accepted",
-      timestamp: "2023-06-14T16:20:00",
-      location: "Chambre 210, Aile Nord",
-      phone: "06 45 67 89 10",
-      email: "karim.zerrouki@example.com",
-      height: "182 cm",
-      weight: "75 kg",
-      medicalRecords: [
-        { condition: "Asthme", date: "2023-01-15" },
-        { condition: "Allergie aux arachides", date: "2022-09-22" },
-        { condition: "Douleurs lombaires", date: "2022-11-30" },
-      ],
-      currentSymptoms: "Difficultés respiratoires, toux sèche",
-      coordinates: [48.856375, 2.3522219], // Rivoli coordinates
-    },
-  ])
+  // État pour les patients pris en charge - initialisé à vide
+  const [acceptedPatients, setAcceptedPatients] = useState([])
 
   // Vérifier si le professionnel a déjà une intervention en cours
   const hasActiveIntervention = acceptedPatients.length > 0
 
+  // Fonction pour récupérer les alertes depuis l'API
+  // Fonction pour récupérer les alertes depuis l'API
+   // Récupérer les alertes du pro
+   const fetchAlerts = async () => {
+    if (!user?.result?.uid) return;
+  
+    setIsLoadingAlerts(true);
+    setAlertsError(null);
+  
+    try {
+      const formData = new FormData();
+      formData.append("ProSid", user.result.uid);
+  
+      const response = await ListAlerts(formData);
+      const data = response.data;
+  
+      console.log("Alertes brutes reçues :", data);
+  
+      if (typeof data === "string") {
+        setPatientRequests([]);
+        setSelectedPatient(null);
+        return;
+      }
+  
+      if (!Array.isArray(data)) {
+        throw new Error("Réponse inattendue du serveur");
+      }
+  
+      const transformedAlerts = await Promise.all(
+        data.map(async (alert, index) => {
+          // On appelle l'API GetInfoPatMed ici pour enrichir l'alerte avec les infos patient
+          const patientUID = alert.patientUID ;
+          let patientInfo = null;
+  
+          if (patientUID) {
+            const patientForm = new FormData();
+            patientForm.append("PatientUID", patientUID);
+  
+            try {
+              const patientRes = await InfoPat(patientForm);
+              patientInfo = patientRes.data;
+                console.log(`Infos patient récupérées pour UID ${patientUID} :`, patientInfo); 
+     
+                console.log(`Taille du patient (UID ${patientUID}):`, patientInfo.patient.weight);
+          
+            } catch (err) {
+              console.warn("Erreur récupération infos patient :", err);
+            }
+          }
+          console.log(`Infos patient récupérées pour UID ${patientUID} :`, patientInfo); 
+            return {
+            id: patientUID,
+            idalert: alert.alertID,
+            name: alert.patientName || patientInfo?.patient?.name || `Patient ${index + 1}`,
+            lastName: alert.patientLastName || patientInfo?.patient?.lastName || "",
+            age: alert.patientAge || patientInfo?.patient?.age || "N/A",
+            email: alert.patientEmail || patientInfo?.patient?.email || "Non renseigné",
+            phone: alert.patientPhone || patientInfo?.patient?.phoneNumber || "Non renseigné",
+            height: alert.height || patientInfo?.patient?.height || "Non renseigné",
+            weight: alert.weight || patientInfo?.patient?.weight || "Non renseigné",
+            location: alert.location || patientInfo?.patient?.adresse || "Localisation non spécifiée",
+            medicalRecords: alert.medicalHistory
+              ? safeParseJSON(alert.medicalHistory)
+              : patientInfo?.patient?.medRecs || [],
+            urgency: alert.color === "rouge" ? "Haute" : alert.color === "orange" ? "Moyenne" : "Basse",
+            status: "pending",
+            timestamp: alert.createdAt || new Date().toISOString(),
+            currentSymptoms: alert.symptoms || alert.description || "Symptômes non spécifiés",
+            coordinates:
+              (alert.latitude && alert.longitude)
+              ? [alert.latitude, alert.longitude]
+              : (patientInfo?.patient?.latitudePatient && patientInfo?.patient?.longitudePatient)
+                ? [patientInfo.patient.latitudePatient, patientInfo.patient.longitudePatient]
+                : [36.7125, 3.1839],
+            color: alert.color,
+            state: alert.state,
+            description: alert.description,
+            };
+
+        })
+      );
+  
+      console.log("Alertes transformées :", transformedAlerts);
+  
+      setPatientRequests(transformedAlerts);
+  
+    
+    } catch (error) {
+      console.error("Erreur lors de la récupération des alertes :", error);
+      setAlertsError("Erreur lors du chargement des alertes");
+    } finally {
+      setIsLoadingAlerts(false);
+    }
+  };
+  
+  // useEffect pour charger les alertes au montage
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
   //recup les info du proS
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
@@ -112,6 +171,13 @@ const ProS = () => {
       window.location.href = "/ProSignin"
     }
   }, [])
+
+  // Récupérer les alertes quand l'utilisateur est chargé ou que la disponibilité change
+  useEffect(() => {
+    if (user?.result?.uid) {
+      fetchAlerts()
+    }
+  }, [user, availabilityState])
 
   // Navigation item click handler
   const handleNavClick = (item) => {
@@ -132,6 +198,7 @@ const ProS = () => {
       case "logout":
         // Implement logout logic
         console.log("Logging out...")
+        handleLogout()
         break
       default:
         // Just update the active state for other items
@@ -140,10 +207,37 @@ const ProS = () => {
   }
 
   // Modified function to cycle through availability states
-  const cycleAvailability = () => {
-    setAvailabilityState((prev) => (prev + 1) % 3)
-  }
-
+  const cycleAvailability = async () => {
+    const nextState = (availabilityState + 1) % 3;
+    setAvailabilityState(nextState);
+  
+    const availabilityMap = {
+      0: "0",   // Urgences
+      1: "1",   // Appels
+      2: "-1"   // Indisponible
+    };
+  
+    const mappedState = availabilityMap[nextState];
+  
+    try {
+      const formData = new FormData();
+      formData.append("ProS", user.result.uid);
+      formData.append("state", mappedState);
+  
+      const response = await SetStatus(formData); // ✅ axios POST
+  
+      // ✅ Axios n’a pas .ok et retourne les données directement dans .data
+      console.log("Statut mis à jour :", response.data);
+  
+      // Optionnel : recharge les alertes après changement
+      fetchAlerts();
+    } catch (error) {
+      console.error("Erreur lors du changement de statut :", error);
+      alert("Erreur lors de la mise à jour du statut.");
+    }
+  };
+  
+  
   // Vehicle connection functions
   const openVehiclePopup = () => {
     setShowVehiclePopup(true)
@@ -164,8 +258,8 @@ const ProS = () => {
   }
 
   // Fonction pour afficher les détails du patient
-  const showPatientDetails = (patient) => {
-    setSelectedPatient(patient)
+  const showPatientDetails = (patientInfo) => {
+    setSelectedPatient(patientInfo)
   }
 
   // Fonction pour fermer les détails du patient
@@ -173,29 +267,59 @@ const ProS = () => {
     setSelectedPatient(null)
   }
 
-  // Fonction pour accepter une demande de prise en charge
-  const acceptPatient = (patientId) => {
-    // Si le professionnel a déjà une intervention en cours, ne pas permettre d'en accepter une autre
+ 
+  
+  const acceptPatient = async (patientId, alertId) => {
     if (hasActiveIntervention) {
-      alert("Vous avez déjà une intervention en cours. Veuillez la terminer avant d'en accepter une nouvelle.")
-      return
+      alert("Vous avez déjà une intervention en cours. Veuillez la terminer avant d'en accepter une nouvelle.");
+      return;
     }
-
-    const updatedRequests = patientRequests.filter((patient) => patient.id !== patientId)
-    const acceptedPatient = patientRequests.find((patient) => patient.id === patientId)
-
-    if (acceptedPatient) {
-      acceptedPatient.status = "accepted"
-      setPatientRequests(updatedRequests)
-      setAcceptedPatients([...acceptedPatients, acceptedPatient])
-
-      // Stocker les informations du patient dans le localStorage pour y accéder depuis RedirPro
-      localStorage.setItem("currentIntervention", JSON.stringify(acceptedPatient))
-
-      // Rediriger vers la page d'intervention
-      navigate("/RedirPros")
+  
+    const acceptedPatient = patientRequests.find((patient) => patient.id === patientId);
+    if (!acceptedPatient) {
+      alert("Alerte introuvable.");
+      return;
     }
-  }
+  
+    try {
+      const latitude = "36.71617";
+      const longitude = "3.18468";
+  
+      const formData = new FormData();
+      formData.append("ProS", user.result.uid);
+      formData.append("IdAlert", alertId);
+      formData.append("lat", latitude);
+      formData.append("longt", longitude);
+  
+      console.log("FormData envoyée :");
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ": " + pair[1]);
+      }
+  
+      const response = await Accept(formData);
+      console.log("Réponse de l'API AcceptAlert :", response);
+  
+      if (response.status === 200) {
+        console.log("Alerte acceptée avec succès :", response.data);
+  
+        acceptedPatient.status = "accepted";
+        const updatedRequests = patientRequests.filter((patient) => patient.id !== patientId);
+        setPatientRequests(updatedRequests);
+        setAcceptedPatients([...acceptedPatients, acceptedPatient]);
+  
+        localStorage.setItem("currentIntervention", JSON.stringify(acceptedPatient));
+        navigate("/RedirPros");
+      } else {
+        alert("Erreur lors de l'acceptation de l'alerte.");
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'appel à AcceptAlert :", error);
+      alert("Échec de l'acceptation de l'intervention. Vérifiez votre connexion ou vos informations.");
+    }
+  };
+  
+  
+  
 
   // Fonction pour refuser une demande de prise en charge
   const declinePatient = (patientId) => {
@@ -288,7 +412,7 @@ const ProS = () => {
             strokeLinejoin="round"
           >
             <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
         )
       case "file-edit":
@@ -694,6 +818,24 @@ const ProS = () => {
             <circle cx="17" cy="17" r="2"></circle>
           </svg>
         )
+      case "refresh-cw":
+        return (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+          </svg>
+        )
       default:
         return null
     }
@@ -952,18 +1094,28 @@ const ProS = () => {
               </button>
 
               {/* Vehicle connection button */}
-                      <button
-                      onClick={openVehiclePopup}
-                      className="px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center bg-[#f05050] hover:bg-[#f05060] text-white"
-                      >
-                      <span className="mr-2 h-5 w-5">{renderIcon("car")}</span>
-                      <span>
-                        {vehicleConnected ? "Disconnect" : "Connect vehicle"}
-                      </span>
-                      </button>
-                    </div>
+              <button
+                onClick={openVehiclePopup}
+                className="px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center bg-[#f05050] hover:bg-[#f05060] text-white"
+              >
+                <span className="mr-2 h-5 w-5">{renderIcon("car")}</span>
+                <span>{vehicleConnected ? "Disconnect" : "Connect vehicle"}</span>
+              </button>
 
-                    {/* Stats Cards - Modified to include clickable vehicle connection */}
+              {/* Refresh alerts button */}
+              <button
+                onClick={fetchAlerts}
+                disabled={isLoadingAlerts}
+                className="px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center   text-white disabled:opacity-50"
+              >
+                <span className={`mr-2 h-5 w-5 ${isLoadingAlerts ? "animate-spin" : ""}`}>
+                  {renderIcon("refresh-cw")}
+                </span>
+                <span>{isLoadingAlerts ? "Loading..." : "Refresh alerts"}</span>
+              </button>
+            </div>
+
+            {/* Stats Cards - Modified to include clickable vehicle connection */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {stats.map((stat, index) => (
                 <div
@@ -984,9 +1136,19 @@ const ProS = () => {
 
             {/* Care requests */}
             <div className="mb-8">
-              <h3 className="text-lg font-semibold mb-4">Alerts</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Alerts</h3>
+                {alertsError && <div className="text-red-500 text-sm">{alertsError}</div>}
+              </div>
               <div className={`${isDark ? "bg-gray-800" : "bg-white"} rounded-lg shadow-sm overflow-hidden`}>
-                {patientRequests.length > 0 ? (
+                {isLoadingAlerts ? (
+                  <div className="p-6 text-center">
+                    <div className="flex items-center justify-center">
+                      <span className="animate-spin mr-2 h-5 w-5">{renderIcon("refresh-cw")}</span>
+                      <p className={`${isDark ? "text-gray-400" : "text-gray-500"}`}>Loading alerts...</p>
+                    </div>
+                  </div>
+                ) : patientRequests.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead
@@ -1009,7 +1171,15 @@ const ProS = () => {
                           >
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
-                                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
+                                <div
+                                  className={`h-10 w-10 rounded-full flex items-center justify-center text-white font-medium ${
+                                    patient.color === "rouge"
+                                      ? "bg-red-500"
+                                      : patient.color === "orange"
+                                        ? "bg-orange-500"
+                                        : "bg-blue-500"
+                                  }`}
+                                >
                                   {patient.name
                                     .split(" ")
                                     .map((n) => n[0])
@@ -1022,8 +1192,16 @@ const ProS = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">{patient.age} years</td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                High
+                              <span
+                                className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                  patient.urgency === "Haute"
+                                    ? "bg-red-100 text-red-800"
+                                    : patient.urgency === "Moyenne"
+                                      ? "bg-orange-100 text-orange-800"
+                                      : "bg-yellow-100 text-yellow-800"
+                                }`}
+                              >
+                                {patient.urgency}
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(patient.timestamp)}</td>
@@ -1032,7 +1210,7 @@ const ProS = () => {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    acceptPatient(patient.id)
+                                    acceptPatient(patient.id,patient.idalert)
                                   }}
                                   className={`text-green-600 hover:text-green-900 dark:hover:text-green-400 ${
                                     hasActiveIntervention ? "opacity-50 cursor-not-allowed" : ""
@@ -1048,7 +1226,7 @@ const ProS = () => {
                                   }}
                                   className="text-red-600 hover:text-red-900 dark:hover:text-red-400"
                                 >
-                                  Decline
+                                  Ignore
                                 </button>
                               </div>
                             </td>
@@ -1059,7 +1237,9 @@ const ProS = () => {
                   </div>
                 ) : (
                   <div className="p-6 text-center">
-                    <p className={`${isDark ? "text-gray-400" : "text-gray-500"}`}>No pending care requests</p>
+                    <p className={`${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                      {availabilityState === 2 ? "You are unavailable - no alerts will be shown" : "No pending alerts"}
+                    </p>
                   </div>
                 )}
               </div>
@@ -1069,7 +1249,7 @@ const ProS = () => {
             <div>
               <h3 className="text-lg font-semibold mb-4">Patient under care</h3>
               <div className={`${isDark ? "bg-gray-800" : "bg-white"} rounded-lg shadow-sm overflow-hidden`}>
-                {acceptedPatients.length > 0 ? (
+      {/*POUR PATIENT UNDER CARE NON AFFICHAGE */}          {acceptedPatients.length < 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead
@@ -1289,15 +1469,19 @@ const ProS = () => {
                 <div className={`rounded-lg overflow-hidden border ${isDark ? "border-gray-700" : "border-gray-200"}`}>
                   <div className="bg-[#f05050] text-white px-4 py-2 font-semibold">Medical Records</div>
                   <div className={`p-4 ${isDark ? "bg-gray-700" : "bg-white"}`}>
-                    {selectedPatient.medicalRecords.map((record, index) => (
-                      <div
-                        key={index}
-                        className={`flex justify-between py-2 ${index !== selectedPatient.medicalRecords.length - 1 ? "border-b" : ""} ${isDark ? "border-gray-600" : "border-gray-200"}`}
-                      >
-                        <div>{record.condition}</div>
-                        <div className="text-gray-500">{record.date}</div>
-                      </div>
-                    ))}
+                    {selectedPatient.medicalRecords && selectedPatient.medicalRecords.length > 0 ? (
+                      selectedPatient.medicalRecords.map((record, index) => (
+                        <div
+                          key={index}
+                          className={`flex justify-between py-2 ${index !== selectedPatient.medicalRecords.length - 1 ? "border-b" : ""} ${isDark ? "border-gray-600" : "border-gray-200"}`}
+                        >
+                          <div>{record.condition}</div>
+                          <div className="text-gray-500">{record.date}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-gray-500">No medical records available</div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1361,7 +1545,7 @@ const ProS = () => {
                     }}
                     className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                   >
-                    Decline
+                    ignore
                   </button>
                 </>
               ) : (

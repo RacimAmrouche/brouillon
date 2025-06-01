@@ -14,7 +14,7 @@ const NotifPro = () => {
       const userData = JSON.parse(storedUser)
       setUser(userData)
     } else {
-      navigate("/PatientSignin")
+      navigate("/ProSignin")
     }
   }, [navigate])
 
@@ -99,7 +99,7 @@ const NotifPro = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <button
-                onClick={() => navigate("/Patient")}
+                onClick={() => navigate("/ProS")}
                 className="mr-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 {renderIcon("arrow-left")}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Addp,Delp, Showp } from '../../services/pat';
 
 const ListProches = () => {
     const navigate = useNavigate();
@@ -12,11 +13,16 @@ const ListProches = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [currentProche, setCurrentProche] = useState(null);
     const [isAddFormVisible, setIsAddFormVisible] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
         phoneNumber: ''
     });
+    
     const [addFormData, setAddFormData] = useState({
         firstName: '',
         lastName: '',
@@ -24,128 +30,96 @@ const ListProches = () => {
     });
 
 
-    // Load user data from localStorage
-/*
-const MaComponent = () => {
-  
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    // Load user data and fetch contacts on component mount
+    useEffect(() => {
+        const initializeComponent = async () => {
+            const storedUser = localStorage.getItem("user");
+            if (!storedUser) {
+                navigate("/PatientSignin");
+                return;
+            }
 
-    if (!storedUser) {
-      navigate("/PatientSignin");
-      return;
-    }
+            try {
+                const userData = JSON.parse(storedUser);
+                setUser(userData);
+                await fetchProches(userData.result.uid);
+            } catch (error) {
+                console.error("Error parsing user data:", error);
+                navigate("/PatientSignin");
+            }
+        };
 
-    const userData = JSON.parse(storedUser);
-    setUser(userData);
+        initializeComponent();
+    }, [navigate]);
 
-    // Appel à l'API backend
-    const fetchProches = async () => {
-      try {
-        const response = await axios.post(
-          "http://localhost:5001/api/procheaddsupp/recupListContact",
-          JSON.stringify(userData.result.uid), // ID du patient dans le body
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (Array.isArray(response.data)) {
-          setProches(response.data);
-          localStorage.setItem("proches", JSON.stringify(response.data));
-        } else {
-          console.warn("Aucun contact trouvé ou réponse inattendue :", response.data);
-          setProches([]);
+    // Clear messages after 5 seconds
+    useEffect(() => {
+        if (error || success) {
+            const timer = setTimeout(() => {
+                setError('');
+                setSuccess('');
+            }, 5000);
+            return () => clearTimeout(timer);
         }
-      } catch (error) {
-        console.error("Erreur lors de la récupération des proches :", error);
-        setProches([]);
-      }
+    }, [error, success]);
+
+    // Fetch contacts from backend
+    const fetchProches = async (patientUID) => {
+        setLoading(true);
+        setError('');
+    
+        try {
+            console.log("Fetching contacts for patient:", patientUID);
+    
+            const formData = new FormData();
+            formData.append("patient", patientUID); // ⚠️ CORRIGÉ : clé "patient" pour correspondre au [FromForm]string patient
+    
+            const response = await Showp(formData);
+    
+            console.log("Backend response:", response.data);
+    
+            if (Array.isArray(response.data)) {
+                const transformedProches = response.data.map((proche) => {
+                    const nameParts = proche.Name ? proche.Name.split(" ") : ["", ""];
+                    return {
+                        idProche: proche.idProche,     // minuscule ici, identifiant unique
+                        name: proche.name,             // minuscule ici, nom complet
+                        phoneNumber: proche.phoneNumber,  // minuscule ici, téléphone
+                        firstName: nameParts[0] || "",
+                        lastName: nameParts.slice(1).join(" ") || "",
+                    };
+                });
+    
+                setProches(transformedProches);
+                localStorage.setItem("proches", JSON.stringify(transformedProches));
+            } else {
+                console.warn("No contacts found or unexpected response:", response.data);
+                setProches([]);
+            }
+        } catch (error) {
+            console.error("Error fetching contacts:", error);
+            setError("Failed to load contacts");
+            setProches([]);
+        } finally {
+            setLoading(false);
+        }
     };
-
-    fetchProches();
-  }, []);
-
-  // Le reste de ton composant ic
-}*/
-
-
-
-
-useEffect(() => {
-  const storedUser = localStorage.getItem("user");
-  if (!storedUser) {
-    window.location.href = "/PatientSignin";
-    return;
-  }
-
-  const userData = JSON.parse(storedUser);
-  setUser(userData);
-
-  const storedProches = localStorage.getItem("proches");
-  if (storedProches) {
-    try {
-      const parsedProches = JSON.parse(storedProches);
-      setProches(parsedProches);
-    } catch {
-      console.warn("Erreur de parsing dans localStorage, liste proche vide");
-      setProches([]);
-    }
-  } else {
-    setProches([]);
-  }
-}, []);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
 
     // Filter proches based on search term
-    const filteredProches = proches.filter(proche => {
-        const fullName = `${proche.firstName} ${proche.lastName}`.toLowerCase();
-        return fullName.includes(searchTerm.toLowerCase()) || 
-               proche.phoneNumber.includes(searchTerm);
+    const filteredProches = searchTerm.trim() === ""
+    ? proches
+    : proches.filter(proche => {
+        const fullName = proche.name?.toLowerCase() || "";
+        const phone = proche.phoneNumber || "";
+
+        return (
+            fullName.includes(searchTerm.toLowerCase()) ||
+            phone.includes(searchTerm)
+        );
     });
+
 
     // Handle form input changes for modal
     const handleInputChange = (e) => {
@@ -168,7 +142,6 @@ useEffect(() => {
     // Toggle add form visibility
     const toggleAddForm = () => {
         setIsAddFormVisible(!isAddFormVisible);
-        // Reset form data when opening
         if (!isAddFormVisible) {
             setAddFormData({
                 firstName: '',
@@ -176,342 +149,165 @@ useEffect(() => {
                 phoneNumber: ''
             });
         }
-    };
-
-    // Open modal for adding new proche
-    const handleAddProche = () => {
-        setCurrentProche(null);
-        setFormData({
-            firstName: '',
-            lastName: '',
-            phoneNumber: ''
-        });
-        setIsModalOpen(true);
+        setError('');
+        setSuccess('');
     };
 
     // Open modal for editing proche
-    const handleEditProche = (proche) => {
-        setCurrentProche(proche);
-        setFormData({
-            firstName: proche.firstName,
-            lastName: proche.lastName,
-            phoneNumber: proche.phoneNumber
-        });
-        setIsModalOpen(true);
-    };
-
-
-
+   
 
     // Open confirmation modal for deleting proche
-   const handleDeleteClick = (proche) => {
-    
+    const handleDeleteClick = (proche) => {
         setCurrentProche(proche);
-        setIsDeleteModalOpen(true); // Ouvre le modal de confirmation visuel (ou de feedback)
+        setIsDeleteModalOpen(true);
+        setError('');
+        setSuccess('');
+    };
 
-};
+    // Add new contact
+    const handleAddProche = async (e) => {
+        e.preventDefault();
+    
+        const { firstName, lastName, phoneNumber } = addFormData;
+    
+        // Validation des champs
+        if (!firstName?.trim() || !lastName?.trim() || !phoneNumber?.trim()) {
+            setError("Veuillez remplir tous les champs.");
+            return;
+        }
+    
+        if (!user?.result?.uid) {
+            setError("Utilisateur non authentifié.");
+            return;
+        }
+    
+        setLoading(true);
+        setError('');
+        setSuccess('');
+    
+        try {
+            const formDataToSend = new FormData();
+            formDataToSend.append("PatientUID", user.result.uid);
+            formDataToSend.append("PhoneNumber", phoneNumber.trim());
+            formDataToSend.append("Name", `${firstName.trim()} ${lastName.trim()}`);
+    
+            console.log("Données envoyées pour ajout de contact :", {
+                PatientUID: user.result.uid,
+                PhoneNumber: phoneNumber.trim(),
+                Name: `${firstName.trim()} ${lastName.trim()}`,
+            });
+    
+            const response = await Addp(formDataToSend);
+            console.log("Réponse du backend :", response.data);
+    
+            setSuccess("Contact ajouté avec succès.");
+            setAddFormData({ firstName: '', lastName: '', phoneNumber: '' });
+            setIsAddFormVisible(false);
+    
+            // Rafraîchir la liste des contacts
+            await fetchProches(user.result.uid);
+        } catch (error) {
+            console.error("Erreur lors de l'ajout du contact :", error);
+            setError(error.response?.data || "Échec de l'ajout du contact.");
+        } finally {
+            setLoading(false);
+        }
+    };
+    
 
+    // Save contact from modal (edit)
+    const handleSaveProche = async () => {
+        if (!formData.firstName || !formData.lastName || !formData.phoneNumber) {
+            setError("Please fill in all fields");
+            return;
+        }
 
+        if (!user || !currentProche) {
+            setError("Invalid operation");
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            const formDataToSend = new FormData();
+            formDataToSend.append("PatientUID", user.result.uid);
+            formDataToSend.append("Name", `${formData.firstName} ${formData.lastName}`);
+            formDataToSend.append("PhoneNumber", formData.phoneNumber);
+            formDataToSend.append("ProcheID", currentProche.IdProche);
+
+            console.log("Updating contact with data:", {
+                PatientUID: user.result.uid,
+                Name: `${formData.firstName} ${formData.lastName}`,
+                PhoneNumber: formData.phoneNumber,
+                ProcheID: currentProche.IdProche,
+            });
+
+            const response = await Addp(formDataToSend);
+
+            console.log("Update contact response:", response.data);
+
+            setSuccess("Contact updated successfully");
+            setIsModalOpen(false);
+            setCurrentProche(null);
+            setFormData({ firstName: '', lastName: '', phoneNumber: '' });
+
+            // Refresh contacts list
+            await fetchProches(user.result.uid);
+        } catch (error) {
+            console.error("Error updating contact:", error);
+            setError(error.response?.data || "Failed to update contact");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Confirm deletion of proche
-    const confirmDelete = () => {
-        if (currentProche) {
-            const updatedProches = proches.filter(p => p.id !== currentProche.id);
-            setProches(updatedProches);
-            localStorage.setItem("proches", JSON.stringify(updatedProches));
+    const confirmDelete = async () => {
+        if (!currentProche || !user) {
+            setError("Invalid operation");
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+        setSuccess('');
+      
+
+        try {   console.log("Deleting contact with data:", {
+            PatientUID: user.result.uid,
+            ProcheID: currentProche.IdProche,
+        });
+            const formData = new FormData();
+            formData.append("PatientUID", user.result.uid);
+            console.log(patientUID, "PatientUID >>>", user.result.uid);
+
+            formData.append("ProcheID", currentProche.IdProche);
+
+            console.log("Deleting contact with data:", {
+                PatientUID: user.result.uid,
+                ProcheID: currentProche.IdProche,
+            });
+
+            const response = await Delp(formData);
+
+            console.log("Delete contact response:", response.data);
+
+            setSuccess("Contact deleted successfully");
             setIsDeleteModalOpen(false);
+            setCurrentProche(null);
+
+            // Refresh contacts list
+            await fetchProches(user.result.uid);
+        } catch (error) {
+            console.error("Error deleting contact:", error);
+            setError(error.response?.data || "Failed to delete contact");
+        } finally {
+            setLoading(false);
         }
     };
-
-    // Save proche from modal (add or update)
-    const handleSaveProche = () => {
-        // Validate form
-
-        if (!formData.firstName || !formData.lastName || !formData.phoneNumber) {
-            alert("Veuillez remplir tous les champs");
-            return;
-        }
-
-        let updatedProches;
-        
-        if (currentProche) {
-            // Update existing proche
-            updatedProches = proches.map(p => 
-                p.id === currentProche.id ? { ...p, ...formData } : p
-            );
-        } else {
-            // Add new proche
-            const newProche = {
-                id: Date.now(), // Simple way to generate unique ID
-                ...formData
-            };
-            updatedProches = [...proches, newProche];
-        }
-        
-        setProches(updatedProches);
-        localStorage.setItem("proches", JSON.stringify(updatedProches));
-        setIsModalOpen(false);
-    };
-
-    // Save proche from add form
-    const handleAddFormSubmit = (e) => {
-        e.preventDefault();
-        
-        // Validate form
-        if (!addFormData.firstName || !addFormData.lastName || !addFormData.phoneNumber) {
-            alert("Veuillez remplir tous les champs");
-            return;
-        }
-
-        // Add new proche
-        const newProche = {
-            id: Date.now(), // Simple way to generate unique ID
-            ...addFormData
-        };
-        
-        const updatedProches = [...proches, newProche];
-        setProches(updatedProches);
-        localStorage.setItem("proches", JSON.stringify(updatedProches));
-        
-        // Reset form and hide it
-        setAddFormData({
-            firstName: '',
-            lastName: '',
-            phoneNumber: ''
-        });
-        setIsAddFormVisible(false);
-    };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                                                        //TODO:YOUSRA CODE TODO:
-        //FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:  /FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:  /FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:                                                                  CE QUE JAI RAJOUYTERRRR
-    const handleAddProcheADDD= async (e) => {e.preventDefault();
-    try {
-        const storedUser = localStorage.getItem("user");
-        if (!storedUser) {
-            console.error("Aucun utilisateur trouvé dans localStorage");
-            return;
-        }
-
-        const userData = JSON.parse(storedUser);
-        const formDataToSend = new FormData();
-        formDataToSend.append('PatientUID', userData.result.uid);
-        formDataToSend.append('PhoneNumber', addFormData.phoneNumber);
-        formDataToSend.append('Name', `${addFormData.firstName} ${addFormData.lastName}`);
-
-        // DEBUG: afficher ce qu'on envoie
-        for (let pair of formDataToSend.entries()) {
-          console.log(pair[0] + ': ' + pair[1]);
-        }
-
-        const response = await axios.post('http://192.168.1.4:5001/api/procheaddsupp/addedit', formDataToSend, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
-
-        console.log("Réponse du serveur :", response.data);
-
-         const nouveauProche = {
-          id: response.data,
-          firstName: addFormData.firstName,
-          lastName: addFormData.lastName,
-          phoneNumber: addFormData.phoneNumber
-};
-        localStorage.setItem('proches', response.data);
-        // Met à jour la liste des proches
-        setProches(prev => [...prev, nouveauProche]);
-
-        // Reset form
-        setAddFormData({ firstName: '', lastName: '', phoneNumber: '' });
-
-    } catch (error) {
-        console.error("Erreur lors de l'ajout du proche :", error);
-    }
-};
-
-    //FIXME: /FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:  /FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:  /FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:  /FIXME:FIXME: FIXME: FIXME: FIXME: FIXME:  ce que j'ai rajouterrrrr
-
-
-
-
-
-
-
-
-
-
-    const confirmDeleteSure = async () => {
-   // if (!currentProche || !currentProche.id) return;
-
-    try {
-        const storedUser = localStorage.getItem("user");
-        if (!storedUser) {
-            console.error("Aucun utilisateur trouvé dans localStorage");
-            return;
-        }
-        
-        const userData = JSON.parse(storedUser);
-        const formData = new FormData();
-        formData.append("PatientUID",userData.result.uid);      // Variable que tu dois avoir dans ton composant
-         formData.append("ProcheID", currentProche.id); //
-
-        console.log(userData.result.uid);
-        console.log(currentProche.id);
-
-        const response = await axios.post("http://192.168.1.4:5001/api/procheaddsupp/delete", formData, {
-            headers: {
-                "Content-Type": "multipart/form-data"
-            }
-        });
-
-        console.log("Suppression réussie :", response.data);
-
-        // Supprimer le proche dans l’état local
-        setProches(prev => prev.filter(p => p.id !== currentProche.id));
-
-        // Fermer le modal
-        setIsDeleteModalOpen(false);
-        setCurrentProche(null);
-
-        // Tu peux aussi ajouter un toast ici si tu veux
-    } catch (error) {
-        console.error("Erreur suppression :", error.response?.data || error.message);
-    }
-};
-
-
-
-
-
-
-
-
-const handleSaveProcheDone = async () => {
-    if (!formData.firstName || !formData.lastName || !formData.phoneNumber) {
-        alert("Vous n'avez rien changé");
-        return;
-    }
-
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) {
-        alert("Utilisateur non connecté");
-        return;
-    }
-
-    const userData = JSON.parse(storedUser);
-    const fullName = `${formData.firstName} ${formData.lastName}`;
-
-    const formToSend = new FormData();
-    formToSend.append("PatientUID", userData.result.uid);
-    formToSend.append("Name", fullName);
-    formToSend.append("PhoneNumber", formData.phoneNumber);
-
-    // Si on est en mode modification, on ajoute le ProcheID
-    if (currentProche && currentProche.id) {
-        formToSend.append("ProcheID", currentProche.id);
-    }
-
-    try {
-        const response = await axios.post("http://192.168.1.4:5001/api/procheaddsupp/addedit", formToSend, {
-            headers: { "Content-Type": "multipart/form-data" }
-        });
-
-        console.log("Réponse du serveur :", response.data);
-
-        let updatedProches;
-
-        if (currentProche) {
-            // Mise à jour du proche
-            updatedProches = proches.map(p =>
-                p.id === currentProche.id ? { ...p, ...formData } : p
-            );
-        } else {
-            // Ajout d’un nouveau proche avec ID du backend (si dispo)
-            const newProche = {
-                id: response.data.ProcheID || Date.now(), // fallback si backend ne le donne pas
-                ...formData
-            };
-            updatedProches = [...proches, newProche];
-        }
-
-        setProches(updatedProches);
-        localStorage.setItem("proches", JSON.stringify(updatedProches));
-        setIsModalOpen(false);
-        setCurrentProche(null);
-        setFormData({ firstName: "", lastName: "", phoneNumber: "" });
-
-    } catch (error) {
-        console.error("Erreur lors de l'enregistrement du proche :", error);
-        alert("Erreur serveur : impossible d'enregistrer le proche.");
-    }
-};
-
-
-
-
- 
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-const ALLLLLL = () => {
-  localStorage.removeItem("proches");
-  // Facultatif : si tu veux aussi vider le state React
-  setProches([]);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     // Go back to dashboard
     const handleBack = () => {
@@ -541,15 +337,24 @@ const ALLLLLL = () => {
                 return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
             case 'chevron-up':
                 return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
+            case 'loader':
+                return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>;
             default:
                 return null;
         }
     };
 
     if (!user) {
-        return <p>Chargement...</p>;
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
+                    <p className="mt-4">Loading...</p>
+                </div>
+            </div>
+        );
     }
-
+    console.log("filteredProches >>>", filteredProches);
     return (
         <div className={`min-h-screen ${isDark ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
             {/* Header */}
@@ -567,6 +372,7 @@ const ALLLLLL = () => {
                     <button 
                         onClick={toggleAddForm}
                         className="bg-[#f05050] text-white px-4 py-2 rounded-lg flex items-center"
+                        disabled={loading}
                     >
                         {renderIcon(isAddFormVisible ? 'chevron-up' : 'plus')}
                         <span className="ml-2">{isAddFormVisible ? 'Close' : 'Add'}</span>
@@ -576,11 +382,24 @@ const ALLLLLL = () => {
 
             {/* Main Content */}
             <div className="container mx-auto p-4">
+                {/* Error/Success Messages */}
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                        {error}
+                    </div>
+                )}
+
+                {success && (
+                    <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                        {success}
+                    </div>
+                )}
+
                 {/* Add Form - Collapsible */}
                 {isAddFormVisible && (
                     <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-4 mb-6 transition-all duration-300`}>
                         <h2 className="text-lg font-semibold mb-4">Add a Contact</h2>
-                        <form onSubmit={handleAddFormSubmit}>
+                        <form onSubmit={handleAddProche}>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                 <div>
                                     <label className="block text-sm font-medium mb-1">First Name</label>
@@ -595,6 +414,8 @@ const ALLLLLL = () => {
                                                 : 'bg-white text-gray-900 border-gray-300'
                                         } focus:outline-none focus:ring-2 focus:ring-[#f05050]`}
                                         placeholder="First Name"
+                                        required
+                                        disabled={loading}
                                     />
                                 </div>
                                 <div>
@@ -610,6 +431,8 @@ const ALLLLLL = () => {
                                                 : 'bg-white text-gray-900 border-gray-300'
                                         } focus:outline-none focus:ring-2 focus:ring-[#f05050]`}
                                         placeholder="Last Name"
+                                        required
+                                        disabled={loading}
                                     />
                                 </div>
                                 <div>
@@ -625,16 +448,21 @@ const ALLLLLL = () => {
                                                 : 'bg-white text-gray-900 border-gray-300'
                                         } focus:outline-none focus:ring-2 focus:ring-[#f05050]`}
                                         placeholder="Phone Number"
+                                        required
+                                        disabled={loading}
                                     />
                                 </div>
                             </div>
                             <div className="flex justify-end">
                                 <button
                                     type="submit"
-                                    className="bg-[#f05050] text-white px-4 py-2 rounded-lg hover:bg-[#e04040]"
-                                    onClick={handleAddProcheADDD} //FIXME: appelle ta fonction au clic
+                                    className="bg-[#f05050] text-white px-4 py-2 rounded-lg hover:bg-[#e04040] flex items-center"
+                                    disabled={loading}
                                 >
-                                    Add
+                                    {loading && renderIcon('loader')}
+                                    <span className={loading ? 'ml-2' : ''}>
+                                        {loading ? 'Adding...' : 'Add'}
+                                    </span>
                                 </button>
                             </div>
                         </form>
@@ -662,63 +490,74 @@ const ALLLLLL = () => {
                 </div>
 
                 {/* Contacts List */}
-                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
-                    {filteredProches.length === 0 ? (
-                        <div className="p-6 text-center">
-                            <p className="text-gray-500 dark:text-gray-400">
-                                {searchTerm ? "No contact found" : "No contact added"}
-                            </p>
-                        </div>
-                    ) : (
-                        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {filteredProches.map((proche) => (
-                                <li key={proche.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <div className="flex items-center mb-1">
-                                                <span className="mr-2">{renderIcon('user')}</span>
-                                                <h3 className="font-medium">{proche.firstName} {proche.lastName}</h3>
-                                            </div>
-                                            <div className="flex items-center text-gray-500 dark:text-gray-400">
-                                                <span className="mr-2">{renderIcon('phone')}</span>
-                                                <p>{proche.phoneNumber}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex space-x-2">
-                                            <button 
-                                                onClick={() => handleEditProche(proche)}
-                                                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                                                aria-label="Edit"
-                                            >
-                                                {renderIcon('edit')}
-                                            </button>
-                                            <button 
-                                                onClick={() => handleDeleteClick(proche)}
-                                                className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 text-red-500 transition-colors"
-                                                aria-label="Delete"
-                                            >
-                                                {renderIcon('delete')}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
+                
             </div>
 
-            {/* Add/Edit Modal with Blurred Background */}
+
+
+{/* Contacts List */}
+<div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
+    {loading && proches.length === 0 ? (
+        <div className="p-6 text-center">
+            <div className="flex justify-center items-center">
+                {renderIcon('loader')}
+                <span className="ml-2">Loading contacts...</span>
+            </div>
+        </div>
+    ) : filteredProches.length === 0 ? (
+        <div className="p-6 text-center">
+            <p className="text-gray-500 dark:text-gray-400">
+                {searchTerm ? "No contact found" : "No contact added"}
+            </p>
+        </div>
+    ) : (
+        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+            {filteredProches.map((proche) => (
+                <li key={proche.idProche} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <div className="flex items-center mb-1">
+                                <span className="mr-2">{renderIcon('user')}</span>
+                                <h3 className="font-medium">{proche.name}</h3>
+                            </div>
+                            <div className="flex items-center text-gray-500 dark:text-gray-400">
+                                <span className="mr-2">{renderIcon('phone')}</span>
+                                <p>{proche.phoneNumber}</p>
+                            </div>
+                        </div>
+                        <div className="flex space-x-2">
+                  
+                            <button 
+                                onClick={() => handleDeleteClick(proche)}
+                                className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 text-red-500 transition-colors"
+                                aria-label="Delete"
+                                disabled={loading}
+                            >
+                                {renderIcon('delete')}
+                            </button>
+                        </div>
+                    </div>
+                </li>
+            ))}
+        </ul>
+    )}
+</div>
+
+
+
+
+
+
+            {/* Edit Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
                     <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg w-full max-w-md mx-4`}>
                         <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-                            <h2 className="text-xl font-bold">
-                                {currentProche ? "Edit a contact" : "Add a contact"}
-                            </h2>
+                            <h2 className="text-xl font-bold">Edit a contact</h2>
                             <button 
                                 onClick={() => setIsModalOpen(false)}
                                 className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                                disabled={loading}
                             >
                                 {renderIcon('x')}
                             </button>
@@ -737,6 +576,7 @@ const ALLLLLL = () => {
                                             : 'bg-white text-gray-900 border-gray-300'
                                     } focus:outline-none focus:ring-2 focus:ring-[#f05050]`}
                                     placeholder="First Name"
+                                    disabled={loading}
                                 />
                             </div>
                             <div className="mb-4">
@@ -752,6 +592,7 @@ const ALLLLLL = () => {
                                             : 'bg-white text-gray-900 border-gray-300'
                                     } focus:outline-none focus:ring-2 focus:ring-[#f05050]`}
                                     placeholder="Last Name"
+                                    disabled={loading}
                                 />
                             </div>
                             <div className="mb-4">
@@ -767,6 +608,7 @@ const ALLLLLL = () => {
                                             : 'bg-white text-gray-900 border-gray-300'
                                     } focus:outline-none focus:ring-2 focus:ring-[#f05050]`}
                                     placeholder="Phone Number"
+                                    disabled={loading}
                                 />
                             </div>
                         </div>
@@ -778,46 +620,56 @@ const ALLLLLL = () => {
                                         ? 'bg-gray-700 hover:bg-gray-600' 
                                         : 'bg-gray-200 hover:bg-gray-300'
                                 }`}
+                                disabled={loading}
                             >
                                 Cancel
                             </button>
                             <button
-                                onClick={handleSaveProcheDone}
-                                className="bg-[#f05050] text-white px-4 py-2 rounded-lg hover:bg-[#e04040]"
+                                onClick={handleSaveProche}
+                                className="bg-[#f05050] text-white px-4 py-2 rounded-lg hover:bg-[#e04040] flex items-center"
+                                disabled={loading}
                             >
-                                Save
+                                {loading && renderIcon('loader')}
+                                <span className={loading ? 'ml-2' : ''}>
+                                    {loading ? 'Saving...' : 'Save'}
+                                </span>
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Delete Confirmation Modal with Blurred Background */}
+            {/* Delete Confirmation Modal */}
             {isDeleteModalOpen && (
                 <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
                     <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg w-full max-w-md mx-4`}>
                         <div className="p-4">
                             <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
                             <p className="mb-4">
-                                Are you sure you want to delete {currentProche?.firstName} {currentProche?.lastName} from your contacts?
+                                Are you sure you want to delete {currentProche?.name} from your contacts?
                             </p>
                         </div>
                         <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700">
                             <button
-                                 onClick={() => setIsDeleteModalOpen(false)}
-                                  className={`px-4 py-2 rounded-lg mr-2 ${
-                                isDark 
-                                   ? 'bg-gray-700 hover:bg-gray-600' 
-                                   : 'bg-gray-200 hover:bg-gray-300'
-    }`}
+                                onClick={() => setIsDeleteModalOpen(false)}
+                                className={`px-4 py-2 rounded-lg mr-2 ${
+                                    isDark 
+                                        ? 'bg-gray-700 hover:bg-gray-600' 
+                                        : 'bg-gray-200 hover:bg-gray-300'
+                                }`}
+                                disabled={loading}
                             >
                                 Cancel
                             </button>
                             <button
-                                onClick={confirmDeleteSure}
-                                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+                                onClick={confirmDelete}
+                                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center"
+                                disabled={loading}
                             >
-                                Delete
+                                {loading && renderIcon('loader')}
+                                <span className={loading ? 'ml-2' : ''}>
+                                    {loading ? 'Deleting...' : 'Delete'}
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -828,8 +680,3 @@ const ALLLLLL = () => {
 };
 
 export default ListProches;
-
-
-
-
-//       <form onSubmit={handleAddFormSubmit}>

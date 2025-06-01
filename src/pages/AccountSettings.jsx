@@ -477,11 +477,45 @@ const AccountSettings = ({ isDark }) => {
     })
   }
 
+  const renderIcon = (name) => {
+    switch(name) {
+        case 'search':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+        case 'edit':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>;
+        case 'delete':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+        case 'plus':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
+        case 'back':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
+        case 'phone':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>;
+        case 'user':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
+        case 'x':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+        case 'chevron-down':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
+        case 'chevron-up':
+            return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
+        default:
+            return null;
+    }
+};
+
+
+
   return (
     <div className={`min-h-screen p-4 ${isDark ? "bg-gray-900 text-white" : "bg-gray-100"}`}>
       <div className="max-w-3xl mx-auto">
-        <h1 className={`text-2xl font-bold mb-6 ${isDark ? "text-white" : "text-gray-800"}`}>Paramètres du compte</h1>
+      <div className="flex items-center mb-10">
+      <button className="mr-4 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                            {renderIcon('back')}
+                        </button>
 
+                        <h3 className="text-4xl font-bold text-[#f05050]">ACCOUNT SETTINGS</h3>
+      </div>
         <div className={`${isDark ? "bg-gray-800" : "bg-white"} rounded-t-lg shadow border-b flex mb-0 flex-wrap`}>
           <button
             className={`px-6 py-3 font-medium transition-colors duration-200 ${
@@ -493,7 +527,7 @@ const AccountSettings = ({ isDark }) => {
             }`}
             onClick={() => setActiveTab("profile")}
           >
-            Profil
+          Edit Profil
           </button>
           <button
             className={`px-6 py-3 font-medium transition-colors duration-200 ${
@@ -505,7 +539,7 @@ const AccountSettings = ({ isDark }) => {
             }`}
             onClick={() => setActiveTab("password")}
           >
-            Changer MDP
+            Change Password
           </button>
           <button
             className={`px-6 py-3 font-medium transition-colors duration-200 ${
@@ -517,7 +551,7 @@ const AccountSettings = ({ isDark }) => {
             }`}
             onClick={() => setActiveTab("phone")}
           >
-            Changer Tel
+            Change Phone Number
           </button>
           <button
             className={`px-6 py-3 font-medium transition-colors duration-200 ${
@@ -529,7 +563,7 @@ const AccountSettings = ({ isDark }) => {
             }`}
             onClick={() => setActiveTab("email")}
           >
-            Changer Email
+            Change Email
           </button>
         </div>
 
@@ -541,7 +575,7 @@ const AccountSettings = ({ isDark }) => {
                 {/* Prénom - non modifiable */}
                 <div>
                   <label className={`block font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
-                    Prénom
+                    First Name
                   </label>
                   <input
                     type="text"
@@ -556,7 +590,7 @@ const AccountSettings = ({ isDark }) => {
 
                 {/* Nom - non modifiable */}
                 <div>
-                  <label className={`block font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>Nom</label>
+                  <label className={`block font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>Last Name</label>
                   <input
                     type="text"
                     name="lastName"
@@ -569,7 +603,7 @@ const AccountSettings = ({ isDark }) => {
                 </div>
                   {/* date naissance- non modifiable */}
                   <div>
-                  <label className={`block font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>Date naissance</label>
+                  <label className={`block font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>Date Of Birth</label>
                   <input
                     type="text"
                     name="birthdate"
@@ -587,7 +621,7 @@ const AccountSettings = ({ isDark }) => {
                     {/* Height */}
                     <div>
                       <label className={`block font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
-                        Taille
+                        Height
                       </label>
                       <input
                         type="text"
@@ -603,7 +637,7 @@ const AccountSettings = ({ isDark }) => {
                     {/* Weight */}
                     <div>
                       <label className={`block font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
-                        Poids
+                        Weight
                       </label>
                       <input
                         type="text"
@@ -621,7 +655,7 @@ const AccountSettings = ({ isDark }) => {
                 {/* Address */}
                 <div>
                   <label className={`block font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
-                    Adresse
+                  Address
                   </label>
                   <input
                     type="text"
@@ -637,7 +671,7 @@ const AccountSettings = ({ isDark }) => {
                 {/* Postal code */}
                 <div>
                   <label className={`block font-medium mb-2 ${isDark ? "text-gray-200" : "text-gray-700"}`}>
-                    Code postal
+                    Postal code
                   </label>
                   <input
                     type="text"
@@ -655,7 +689,7 @@ const AccountSettings = ({ isDark }) => {
                 type="submit"
                 className="px-4 py-2 bg-[#F05050] text-white font-medium rounded hover:bg-[#e04040] transition-colors duration-200"
               >
-                Enregistrer les modifications
+                Save modifications
               </button>
             </form>
           )}

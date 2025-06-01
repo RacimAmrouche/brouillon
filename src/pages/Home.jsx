@@ -1,18 +1,14 @@
 "use client"
-import { useState, useEffect } from "react"
+
+import { useState } from "react"
+import { Phone, Users, Clock } from "lucide-react"
+import { Link } from "react-router-dom"
+import g107 from "../assets/g107.png"
+import logoBlanc from "../assets/g86-2-1-7.png"
 import LoginSig from "./LoginSig" // Importation du composant LoginSig
 
-const Home = ({ isDarkMode }) => {
-  const [textColor, setTextColor] = useState("text-white")
+const Home = () => {
   const [showLoginPopup, setShowLoginPopup] = useState(false) // État pour contrôler l'affichage du popup
-
-  useEffect(() => {
-    if (isDarkMode) {
-      setTextColor("text-black")
-    } else {
-      setTextColor("text-white")
-    }
-  }, [isDarkMode])
 
   // Fonction pour ouvrir le popup
   const openLoginPopup = () => {
@@ -26,65 +22,155 @@ const Home = ({ isDarkMode }) => {
     document.body.style.overflow = "" // Réactiver le défilement
   }
 
-
   return (
     <div className="relative">
       {/* Contenu principal avec effet de flou lorsque le popup est ouvert */}
       <div
-        className={`flex flex-col items-center w-full min-h-screen ${isDarkMode ? "bg-black" : "bg-[#f05050]"} ${textColor} transition-all duration-300 ${showLoginPopup ? "blur-sm" : ""}`}
+        className={`min-h-screen bg-gradient-to-br from-red-50 to-white mt-158 transition-all duration-300 ${showLoginPopup ? "blur-sm" : ""}`}
       >
-        {/* Header Navigation */}
+        {/* Header */}
+        <header className="bg-primary shadow-sm border-b bg-[#f05050]">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-10 h-10 flex items-center justify-center">
+                <img
+                  src={g107 || "/placeholder.svg"}
+                  alt="E-Mergency Logo"
+                  width={40}
+                  height={40}
+                  className="w-10 h-10"
+                />
+              </div>
+              <h3 className="text-2xl font-bold text-white">E-Mergency</h3>
+            </div>
 
-        {/* Section principale avec titre et logo */}
-        <main className="flex flex-col items-center justify-center flex-grow text-center px-4">
-          {/* Emplacement pour le grand logo au centre */}
-          <div className="relative mb-6">
-            <img src="/path-to-your-big-logo.svg" alt="E-mergency Icon" className="h-40 w-40 opacity-30" />
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-6 ">
+              <Link to="#" className="text-white/80 hover:text-white transition-colors">
+                Home
+              </Link>
+              <a href="#features" className="text-white/80 hover:text-white transition-colors">
+                Features
+              </a>
+              <a href="#footer" className="text-white/80 hover:text-white transition-colors">
+                Contact
+              </a>
+              <button
+                onClick={openLoginPopup}
+                className="bg-[white] text-primary hover:bg-gray-100 px-4 py-2 rounded-md font-medium transition-colors text-[#f05050]"
+              >
+                Sign in/up
+              </button>
+            </nav>
+
+            {/* Mobile Navigation */}
+            <div className="md:hidden">
+              <button
+                onClick={openLoginPopup}
+                className="bg-white text-primary hover:bg-gray-100 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+              >
+                Sign in/up
+              </button>
+            </div>
           </div>
+        </header>
 
-          {/* Titre principal */}
-          <h1 className="text-5xl font-bold mb-10 tracking-wide">JOIN E-MERGENCY NOW !</h1>
-
-          {/* Bouton Sign Up modifié pour ouvrir le popup au lieu de naviguer */}
-          <button
-            onClick={openLoginPopup}
-            className={`bg-white ${isDarkMode ? "text-black" : "text-[#f05050]"} px-8 py-3 rounded-full text-xl font-semibold shadow-md hover:bg-gray-100 transition duration-300 mb-16`}
-          >
-            Sign Up / Sign In
-          </button>
-
-          {/* Section "Who are we?" */}
-          <section className="w-full max-w-4xl mb-16">
-            <h2 className="text-4xl font-bold mb-6">WHO ARE WE?</h2>
-
-            <div className="text-center px-4">
-              <p className="mb-4">
-                We Are the E-mergency team we introduce an innovative medical assistance application leveraging the Internet of Things IOT and IA to enhance emergency management. It targets risks associated with chronic conditions like diabetes and cardiovascular diseases, offering crucial support in critical situations such as driving.
-              </p>
-              <p className="mb-4">
-                Our platform provides real-time alerts to individuals, their contacts, and emergency services, utilizing a deep neural network for anomaly detection. Built with a secure, hybrid cloud architecture, it ensures high availability, scalability, and robust data protection.
-              </p>
-              <p>
-                Developed with expertise in software engineering and cybersecurity, this solution demonstrates technical feasibility for real-world use. We aim to improve patient quality of life by offering enhanced safety and peace of mind during unexpected health events.
+        {/* Hero Section */}
+        <section className="container mx-auto px-4 py-16 text-center">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-8">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-primary rounded-full mb-6 bg-[#f05050]">
+                <img src={logoBlanc || "/placeholder.svg"} className="h-10 w-10" />
+              </div>
+              <h2 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">E-Mergency</h2>
+              <p className="text-xl md:text-2xl text-gray-600 mb-8 leading-relaxed">
+                Your intelligent medical emergency assistant
               </p>
             </div>
-          </section>
-        </main>
+
+            {/* Description */}
+            <div  id="features" className="bg-white rounded-2xl shadow-lg p-8 mb-12 border border-gray-100">
+              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Who are we?</h3>
+              <p className="text-lg text-gray-700 leading-relaxed mb-6">
+                E-Mergency is an innovative medical application that revolutionizes health emergency management. We
+                instantly connect patients to appropriate emergency services through an intelligent and geolocated alert
+                system.
+              </p>
+              <p className="text-base text-gray-600">Our mission: saving lives by reducing medical response times.</p>
+            </div>
+
+            {/* Features */}
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+              <div className="bg-white rounded-lg border-2 border-gray-100 hover:border-primary/20 transition-colors shadow-sm">
+                <div className="p-6 text-center">
+                  <Phone className="h-12 w-12 text-primary mx-auto mb-4 text-[#f05050]" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Quick Alert</h4>
+                  <p className="text-gray-600">Automatic health anomalies detection with automatic geolocation</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg border-2 border-gray-100 hover:border-primary/20 transition-colors shadow-sm">
+                <div className="p-6 text-center">
+                  <Users className="h-12 w-12 text-primary mx-auto mb-4 text-[#f05050]" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Medical Network</h4>
+                  <p className="text-gray-600">
+                    Direct connection with healthcare professionals and emergency services
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg border-2 border-gray-100 hover:border-primary/20 transition-colors shadow-sm">
+                <div className="p-6 text-center">
+                  <Clock className="h-12 w-12 text-primary mx-auto mb-4 text-[#f05050]" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">24/7 Response</h4>
+                  <p className="text-gray-600">Service available 24/7 for all your medical emergencies</p>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
+              <button className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white px-8 py-3 text-lg rounded-lg font-medium transition-colors bg-[#f05050]">
+                Download App
+              </button>
+            </div>
+          </div>
+        </section>
 
         {/* Footer */}
+        <footer id="footer" className="bg-gray-900 text-white py-8 mt-16">
+          <div className="container mx-auto px-4 text-center">
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <div className="w-8 h-8 flex items-center justify-center">
+                <img
+                  src={g107 || "/placeholder.svg"}
+                  alt="E-Mergency Logo"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8"
+                />
+              </div>
+              <span className="text-xl font-semibold">E-Mergency</span>
+            </div>
+            <p className="text-gray-400">© 2024 E-Mergency. All rights reserved. Your health, our priority.</p>
+          </div>
+        </footer>
       </div>
 
-     {/* Popup LoginSig */}
-        {showLoginPopup && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0" onClick={closeLoginPopup}></div>
-            <div className="relative z-10">
-          {/* Bouton de fermeture */}
+      {/* Popup LoginSig */}
+      {showLoginPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Overlay semi-transparent */}
+          <div className="absolute inset-0 bg-black/50" onClick={closeLoginPopup}></div>
+
+          {/* Conteneur du popup */}
+          <div className="relative z-10">
+            {/* Bouton de fermeture */}
             <button
-              className="absolute top-4 right-4 z-20 text-gray-100 hover:text-gray-200 bg-[#f05050] rounded-full w-6 h-6 flex items-center justify-center shadow-md transition duration-300 transform hover:scale-70"
+              className="absolute top-4 right-4 z-20 text-gray-100 hover:text-gray-200 bg-[#f05050] rounded-full w-8 h-8 flex items-center justify-center shadow-md transition duration-300 transform hover:scale-110"
               onClick={closeLoginPopup}
             >
-              ×
+              <span className="text-xl font-bold">×</span>
             </button>
 
             {/* Composant LoginSig */}
@@ -97,6 +183,8 @@ const Home = ({ isDarkMode }) => {
 }
 
 export default Home
+
+
 
 
 

@@ -10,7 +10,7 @@ const RootLayout = () => {
   const location = useLocation()
 
   // Liste des chemins où la barre de navigation et le footer DOIVENT s'afficher
-  const showNavbarPaths = ["/", "/features"]
+  const showNavbarPaths = []
 
   // Vérifiez si le chemin actuel est dans la liste des chemins avec navbar
   const shouldShowNavbar = showNavbarPaths.includes(location.pathname)

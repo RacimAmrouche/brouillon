@@ -32,3 +32,17 @@ export const signinProS = (data ) => {
       },
     });
 }
+export const Logout = (data ) => {
+  return api.post('/auth/logout', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+};
+export const SendHelp = (data ) => {
+  return api.post('/sending/Help', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+};
